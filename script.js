@@ -1312,7 +1312,12 @@ function createRouletteHTML(items) {
 
 // Spin the roulette - СЕРВЕРНАЯ ВЕРСИЯ
 async function spinRoulette() {
-    if (rouletteState.isSpinning) return;
+    console.log('🎰 spinRoulette called!', { isSpinning: rouletteState.isSpinning, currentCase: window.currentCase });
+    
+    if (rouletteState.isSpinning) {
+        console.log('⚠️ Already spinning, ignoring');
+        return;
+    }
     
     // Берём цену из текущего выбранного кейса
     const baseTonPrice = window.currentCase?.price || 10;
@@ -1325,6 +1330,8 @@ async function spinRoulette() {
     
     // Check the correct balance based on currency
     const currentBalance = state.currentCurrency === 'stars' ? state.starsBalance : state.balance;
+    
+    console.log('💰 Balance check:', { currentBalance, casePrice, currency: state.currentCurrency });
     
     // Проверяем что баланс положительный И достаточный (клиентская предпроверка)
     if (currentBalance <= 0 || currentBalance < casePrice) {
@@ -1352,6 +1359,8 @@ async function spinRoulette() {
         let caseType = 'basic';
         if (baseTonPrice >= 10) caseType = 'legendary';
         else if (baseTonPrice >= 2) caseType = 'premium';
+        
+        console.log('📡 Calling server openCase:', { caseType, currency: state.currentCurrency });
         
         serverResult = await window.secureAPI.openCase(caseType, state.currentCurrency);
         
