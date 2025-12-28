@@ -106,10 +106,42 @@ export class DatabaseService {
             )
         `);
 
+        // Create inventory table
+        await this.run(`
+            CREATE TABLE IF NOT EXISTS inventory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                item_price REAL NOT NULL,
+                item_image TEXT,
+                item_collection TEXT,
+                won_at TEXT NOT NULL,
+                source TEXT DEFAULT 'case',
+                FOREIGN KEY (telegram_id) REFERENCES users(telegram_id)
+            )
+        `);
+
+        // Create case_spins table (история открытий кейсов)
+        await this.run(`
+            CREATE TABLE IF NOT EXISTS case_spins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id TEXT NOT NULL,
+                case_type TEXT NOT NULL,
+                bet_amount REAL NOT NULL,
+                bet_currency TEXT NOT NULL,
+                won_item TEXT NOT NULL,
+                won_value REAL NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (telegram_id) REFERENCES users(telegram_id)
+            )
+        `);
+
         // Create indexes for users
         await this.run('CREATE INDEX IF NOT EXISTS idx_users_telegram ON users(telegram_id)');
         await this.run('CREATE INDEX IF NOT EXISTS idx_deposits_telegram ON deposits(telegram_id)');
         await this.run('CREATE INDEX IF NOT EXISTS idx_deposits_order ON deposits(order_id)');
+        await this.run('CREATE INDEX IF NOT EXISTS idx_inventory_telegram ON inventory(telegram_id)');
+        await this.run('CREATE INDEX IF NOT EXISTS idx_case_spins_telegram ON case_spins(telegram_id)');
 
         console.log('✅ Database initialized');
     }
@@ -370,5 +402,135 @@ export class DatabaseService {
      */
     async getOrder(order_id) {
         return await this.get('SELECT * FROM deposits WHERE order_id = ?', [order_id]);
+    }
+
+    // ==================== ИНВЕНТАРЬ ====================
+
+    /**
+     * Добавить предмет в инвентарь
+     */
+    async addInventoryItem(telegram_id, item) {
+        const now = new Date().toISOString();
+        
+        const result = await this.run(`
+            INSERT INTO inventory (telegram_id, item_name, item_price, item_image, item_collection, won_at, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            telegram_id,
+            item.name,
+            item.price || 0,
+            item.image || '',
+            item.collection || '',
+            now,
+            item.source || 'case'
+        ]);
+        
+        return {
+            id: result.lastID,
+            telegram_id,
+            ...item,
+            won_at: now
+        };
+    }
+
+    /**
+     * Получить инвентарь пользователя
+     */
+    async getInventory(telegram_id) {
+        return await this.all(`
+            SELECT * FROM inventory 
+            WHERE telegram_id = ? 
+            ORDER BY won_at DESC
+        `, [telegram_id]);
+    }
+
+    /**
+     * Получить количество предметов в инвентаре
+     */
+    async getInventoryCount(telegram_id) {
+        const result = await this.get(`
+            SELECT COUNT(*) as count FROM inventory WHERE telegram_id = ?
+        `, [telegram_id]);
+        return result?.count || 0;
+    }
+
+    /**
+     * Удалить предмет из инвентаря (при продаже)
+     */
+    async removeInventoryItem(telegram_id, itemId) {
+        const result = await this.run(`
+            DELETE FROM inventory WHERE id = ? AND telegram_id = ?
+        `, [itemId, telegram_id]);
+        return result.changes > 0;
+    }
+
+    // ==================== КЕЙСЫ И СПИНЫ ====================
+
+    /**
+     * Записать открытие кейса
+     */
+    async recordCaseSpin(telegram_id, spinData) {
+        const now = new Date().toISOString();
+        
+        const result = await this.run(`
+            INSERT INTO case_spins (telegram_id, case_type, bet_amount, bet_currency, won_item, won_value, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            telegram_id,
+            spinData.case_type,
+            spinData.bet_amount,
+            spinData.bet_currency || 'stars',
+            spinData.won_item,
+            spinData.won_value || 0,
+            now
+        ]);
+        
+        return {
+            id: result.lastID,
+            telegram_id,
+            ...spinData,
+            created_at: now
+        };
+    }
+
+    /**
+     * Получить историю спинов пользователя
+     */
+    async getCaseSpins(telegram_id, limit = 50) {
+        return await this.all(`
+            SELECT * FROM case_spins 
+            WHERE telegram_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT ?
+        `, [telegram_id, limit]);
+    }
+
+    /**
+     * Получить статистику по кейсам
+     */
+    async getCaseStats(telegram_id) {
+        return await this.get(`
+            SELECT 
+                COUNT(*) as total_spins,
+                SUM(bet_amount) as total_bet,
+                SUM(won_value) as total_won,
+                AVG(won_value) as avg_win
+            FROM case_spins 
+            WHERE telegram_id = ?
+        `, [telegram_id]);
+    }
+
+    /**
+     * Получить полный баланс пользователя (для API)
+     */
+    async getFullBalance(telegram_id) {
+        const user = await this.getUser(telegram_id);
+        if (!user) return null;
+        
+        return {
+            stars: user.balance_stars,
+            ton: user.balance_ton,
+            inventory_count: await this.getInventoryCount(telegram_id)
+        };
     }
 }

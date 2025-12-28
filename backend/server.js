@@ -15,6 +15,7 @@ import { FragmentMockParser } from './services/fragmentMockParser.js';
 import { exchangeRates } from './services/exchangeRates.js';
 import { initRoutes } from './routes/api.js';
 import { initBotRoutes } from './routes/bot.js';
+import { initSecureRoutes } from './routes/secureApi.js';
 import { CrashGameService } from './services/crashGame.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,11 +30,16 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
 
-// CORS
+// CORS - расширенные заголовки для Telegram Auth
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, X-Telegram-Init-Data, Authorization');
+    
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
     next();
 });
 
@@ -139,6 +145,9 @@ function handleCrashMessage(ws, msg) {
 
 // API Routes
 initRoutes(app, db, imageLoader, giftSync);
+
+// Secure API Routes (with Telegram auth)
+initSecureRoutes(app, db);
 
 // Bot API Routes (protected with Bearer auth)
 initBotRoutes(app, db);

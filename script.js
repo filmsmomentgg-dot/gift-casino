@@ -106,11 +106,11 @@ function addToInventory(item) {
     console.log(`🎒 Added to inventory: ${item.name}`);
 }
 
-// 🎒 Sell item from inventory
+// 🎒 Sell item from inventory - СЕРВЕРНАЯ ВЕРСИЯ
 // Защита от быстрых кликов
 const sellLock = new Set();
 
-function sellFromInventory(itemId) {
+async function sellFromInventory(itemId) {
     // Защита от двойного клика
     if (sellLock.has(itemId)) {
         console.log('⏳ Already selling this item...');
@@ -118,42 +118,81 @@ function sellFromInventory(itemId) {
     }
     
     const index = state.inventory.findIndex(i => i.id === itemId);
-    if (index === -1) return false;
+    if (index === -1) {
+        showNotification('❌ Предмет не найден');
+        return false;
+    }
     
     // Блокируем этот айтем
     sellLock.add(itemId);
     
     const item = state.inventory[index];
-    const rate = state.exchangeRate?.starsPerTon || 81;
     
-    // Calculate sell price based on current currency
-    let sellPrice = item.price;
-    if (state.currentCurrency === 'stars') {
-        sellPrice = Math.round(item.price * rate);
+    try {
+        // 🔒 Продаём через сервер
+        if (window.secureAPI) {
+            console.log(`💰 Selling item ${itemId} via server...`);
+            const response = await window.secureAPI.sellItem(itemId, state.currentCurrency);
+            
+            if (!response.success) {
+                throw new Error(response.error || 'Failed to sell');
+            }
+            
+            // Обновляем баланс из серверного ответа
+            const newBalance = response.balance[state.currentCurrency];
+            if (state.currentCurrency === 'stars') {
+                state.starsBalance = newBalance;
+            } else {
+                state.balance = newBalance;
+            }
+            updateBalanceDisplay();
+            
+            // Удаляем из локального инвентаря
+            state.inventory.splice(index, 1);
+            
+            const currencyName = state.currentCurrency === 'stars' ? '⭐' : 'TON';
+            showNotification(`💰 Продано: ${item.name} (+${response.soldItem.sellPrice} ${currencyName})`);
+            
+        } else {
+            // Fallback для разработки без сервера
+            const rate = state.exchangeRate?.starsPerTon || 81;
+            let sellPrice = Math.floor(item.price * 0.85); // 85% - комиссия казино
+            if (state.currentCurrency === 'stars') {
+                sellPrice = Math.round(sellPrice * rate);
+            }
+            
+            state.inventory.splice(index, 1);
+            saveInventory();
+            updateBalance(sellPrice);
+            
+            const currencyName = state.currentCurrency === 'stars' ? '⭐' : 'TON';
+            showNotification(`💰 Продано: ${item.name} (+${sellPrice} ${currencyName})`);
+        }
+        
+        // Update UI
+        updateInventoryBadge();
+        updateInventoryDisplay();
+        
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Sell error:', error);
+        showNotification(`❌ Ошибка продажи: ${error.message}`);
+        
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+        
+        return false;
+        
+    } finally {
+        // Разблокируем через небольшую задержку
+        setTimeout(() => sellLock.delete(itemId), 100);
     }
-    
-    // Remove from inventory FIRST (before balance update)
-    state.inventory.splice(index, 1);
-    saveInventory();
-    
-    // Add to balance
-    updateBalance(sellPrice);
-    
-    // Update UI
-    updateInventoryBadge();
-    updateInventoryDisplay();
-    
-    const currencyName = state.currentCurrency === 'stars' ? '⭐' : 'TON';
-    showNotification(`💰 Продано: ${item.name} (+${sellPrice} ${currencyName})`);
-    
-    if (tg?.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('success');
-    }
-    
-    // Разблокируем через небольшую задержку
-    setTimeout(() => sellLock.delete(itemId), 100);
-    
-    return true;
 }
 
 // 🎒 Update inventory badge count
@@ -555,17 +594,9 @@ function formatPrice(price) {
 
 // 🎯 Initialize App
 async function initApp() {
-    // Load inventory from localStorage
+    // Load inventory from localStorage (fallback until server sync)
     loadInventory();
     updateInventoryBadge();
-    
-    // Загружаем баланс
-    loadBalance();
-    
-    // Обновляем отображение баланса
-    if (elements.balanceAmount) {
-        updateBalanceDisplay();
-    }
     
     // Setup event listeners
     setupEventListeners();
@@ -574,14 +605,98 @@ async function initApp() {
     // Load exchange rates first
     await loadExchangeRates();
     
-    // Load gifts from backend
+    // 🔒 Загружаем баланс с СЕРВЕРА (безопасно)
+    await loadBalanceFromServer();
+    
+    // Load gifts from backend for UI display
     await loadGifts();
     
-    // ТЕСТОВЫЙ БАЛАНС (всегда при запуске)
-    state.balance = 1000;
-    state.starsBalance = 100000;
-    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
-    if (typeof saveBalance === 'function') saveBalance();
+    // Загружаем инвентарь с сервера
+    await loadInventoryFromServer();
+}
+
+// 🔒 Загрузка баланса с сервера
+async function loadBalanceFromServer() {
+    try {
+        console.log('💰 Loading balance from server...');
+        
+        if (!window.secureAPI) {
+            console.warn('⚠️ SecureAPI not available, using fallback');
+            loadBalance(); // fallback на localStorage
+            updateBalanceDisplay();
+            return;
+        }
+        
+        const response = await window.secureAPI.getBalance();
+        
+        if (response.success && response.data) {
+            state.starsBalance = response.data.stars || 0;
+            state.balance = response.data.ton || 0;
+            console.log(`✅ Balance loaded: ${state.starsBalance} Stars, ${state.balance} TON`);
+        } else {
+            console.warn('⚠️ Server balance failed, using fallback');
+            loadBalance();
+        }
+    } catch (error) {
+        console.error('❌ Failed to load balance from server:', error);
+        // Fallback на localStorage для разработки
+        loadBalance();
+    }
+    
+    updateBalanceDisplay();
+}
+
+// 🔒 Загрузка инвентаря с сервера
+async function loadInventoryFromServer() {
+    try {
+        console.log('🎒 Loading inventory from server...');
+        
+        if (!window.secureAPI) {
+            console.warn('⚠️ SecureAPI not available');
+            return;
+        }
+        
+        const response = await window.secureAPI.getInventory();
+        
+        if (response.success && response.data) {
+            // Преобразуем серверный формат в клиентский
+            state.inventory = response.data.map(item => ({
+                id: item.id,
+                name: item.item_name,
+                price: item.item_price,
+                imageUrl: item.item_image,
+                collection: item.item_collection,
+                wonAt: item.won_at,
+                source: item.source
+            }));
+            
+            updateInventoryBadge();
+            console.log(`✅ Inventory loaded: ${state.inventory.length} items`);
+        }
+    } catch (error) {
+        console.error('❌ Failed to load inventory from server:', error);
+    }
+}
+
+// 🔄 Функция для обновления кнопки открытия кейса
+function updateOpenCaseBtn() {
+    const openBtn = document.getElementById('openCaseBtn');
+    if (!openBtn || !window.currentCase) return;
+    
+    const baseTonPrice = window.currentCase.price;
+    const rate = state.exchangeRate?.starsPerTon || 81;
+    const displayPrice = state.currentCurrency === 'stars' 
+        ? Math.round(baseTonPrice * rate) 
+        : baseTonPrice;
+    const icon = state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
+    
+    openBtn.innerHTML = `
+        <span class="btn-icon">🎰</span>
+        <span class="btn-text">Открыть за</span>
+        <img src="${icon}" alt="" class="btn-currency-icon">
+        <span class="btn-price">${displayPrice}</span>
+    `;
+    openBtn.disabled = false;
 }
 
 // 🎒 Setup inventory event listeners
@@ -1195,8 +1310,8 @@ function createRouletteHTML(items) {
     }).join('');
 }
 
-// Spin the roulette
-function spinRoulette() {
+// Spin the roulette - СЕРВЕРНАЯ ВЕРСИЯ
+async function spinRoulette() {
     if (rouletteState.isSpinning) return;
     
     // Берём цену из текущего выбранного кейса
@@ -1211,7 +1326,7 @@ function spinRoulette() {
     // Check the correct balance based on currency
     const currentBalance = state.currentCurrency === 'stars' ? state.starsBalance : state.balance;
     
-    // Проверяем что баланс положительный И достаточный
+    // Проверяем что баланс положительный И достаточный (клиентская предпроверка)
     if (currentBalance <= 0 || currentBalance < casePrice) {
         const currencyName = state.currentCurrency === 'stars' ? 'Stars' : 'TON';
         showNotification(`❌ Недостаточно ${currencyName}!`);
@@ -1223,18 +1338,74 @@ function spinRoulette() {
     
     rouletteState.isSpinning = true;
     
-    // Deduct balance
-    updateBalance(-casePrice);
-    
-    // Get items and select winner
-    const caseItems = getCaseItems();
-    if (caseItems.length === 0) {
-        showNotification('❌ Нет доступных призов!');
+    // Показываем индикатор загрузки
+    const openBtn = document.getElementById('openCaseBtn');
+    if (openBtn) {
+        openBtn.innerHTML = '<span class="spinner">⏳</span> Открываем...';
+        openBtn.disabled = true;
+    }
+
+    // 🔒 ЗАПРОС НА СЕРВЕР - рандом происходит там!
+    let serverResult;
+    try {
+        // Определяем тип кейса по цене (временное решение до миграции на серверные кейсы)
+        let caseType = 'basic';
+        if (baseTonPrice >= 10) caseType = 'legendary';
+        else if (baseTonPrice >= 2) caseType = 'premium';
+        
+        serverResult = await window.secureAPI.openCase(caseType, state.currentCurrency);
+        
+        if (!serverResult.success) {
+            throw new Error(serverResult.error || 'Failed to open case');
+        }
+        
+        console.log('🎰 Server result:', serverResult);
+        
+    } catch (error) {
+        console.error('❌ Case open error:', error);
+        showNotification(`❌ Ошибка: ${error.message}`);
         rouletteState.isSpinning = false;
+        
+        // Восстанавливаем кнопку
+        if (openBtn) {
+            openBtn.disabled = false;
+            updateOpenCaseBtn();
+        }
+        
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('error');
+        }
         return;
     }
+
+    // Обновляем баланс с сервера
+    const newBalance = serverResult.balance[state.currentCurrency];
+    if (state.currentCurrency === 'stars') {
+        state.starsBalance = newBalance;
+    } else {
+        state.balance = newBalance;
+    }
+    updateBalanceDisplay();
     
-    const winner = selectWinner(caseItems);
+    // Создаём объект победителя из серверного ответа
+    const winner = {
+        name: serverResult.wonItem.name,
+        price: serverResult.wonItem.price,
+        imageUrl: serverResult.wonItem.image,
+        emoji: '🎁',
+        rarity: serverResult.wonItem.price > 1000 ? 'legendary' : 
+               serverResult.wonItem.price > 300 ? 'ultra-rare' : 
+               serverResult.wonItem.price > 100 ? 'rare' : 'common',
+        collection: serverResult.wonItem.collection
+    };
+    
+    // Get items for animation
+    const caseItems = getCaseItems();
+    if (caseItems.length === 0) {
+        // Fallback если нет клиентских items для анимации
+        caseItems.push(winner);
+    }
+    
     const { items, winnerPosition } = generateRouletteItems(winner, 50);
     
     // Setup roulette UI
@@ -1242,7 +1413,6 @@ function spinRoulette() {
     const track = document.getElementById('rouletteTrack');
     const caseItemsEl = document.querySelector('.case-items');
     const caseImageEl = document.querySelector('.case-modal-image-wrapper');
-    const openBtn = document.getElementById('openCaseBtn');
     
     // Hide case items, show roulette
     if (caseItemsEl) caseItemsEl.style.display = 'none';
@@ -1329,10 +1499,11 @@ function showWinModal(winner) {
     
     winModal.style.display = 'flex';
     
-    // Win button handler - add to inventory instead of balance
-    winBtn.onclick = () => {
-        // Add to inventory
-        addToInventory(winner);
+    // Win button handler - предмет УЖЕ добавлен на сервере!
+    winBtn.onclick = async () => {
+        // 🔒 Сервер уже добавил в инвентарь при openCase
+        // Просто обновляем локальный инвентарь с сервера
+        await loadInventoryFromServer();
         
         // Reset UI
         winModal.style.display = 'none';
@@ -1340,6 +1511,7 @@ function showWinModal(winner) {
         document.querySelector('.case-items').style.display = 'grid';
         document.querySelector('.case-modal-image-wrapper').style.display = 'flex';
         document.getElementById('openCaseBtn').style.display = 'flex';
+        updateOpenCaseBtn();
         
         showNotification(`🎒 В инвентарь: ${winner.name}`);
         
