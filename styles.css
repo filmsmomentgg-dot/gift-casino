@@ -2390,6 +2390,12 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    /* Ensure children don't overlap */
+    overflow: visible;
+}
+
+.crash-controls > * {
+    flex-shrink: 0;
 }
 
 .crash-bet-input label {
@@ -2560,6 +2566,12 @@ body {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    /* Fix: ensure full button is clickable */
+    display: block;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    touch-action: manipulation;
 }
 
 .crash-btn:hover {
@@ -2589,12 +2601,6 @@ body {
 .crash-btn:disabled {
     cursor: not-allowed;
     pointer-events: auto;
-}
-
-.crash-btn,
-.bet-quick {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
 }
 
 /* ==========================================
