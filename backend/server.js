@@ -161,11 +161,7 @@ async function handleCrashMessage(ws, msg) {
             ws.isAuthenticated = true;
             
             // Создаём/обновляем пользователя в БД
-            await db.getOrCreateUser(userData.id, {
-                username: userData.username,
-                first_name: userData.first_name,
-                last_name: userData.last_name
-            });
+            await db.upsertUser(userData.id, userData.username);
             
             // Получаем баланс
             const balance = await db.getFullBalance(userData.id);
