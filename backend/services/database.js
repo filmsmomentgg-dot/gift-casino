@@ -340,7 +340,7 @@ export class DatabaseService {
         
         await this.run(`
             INSERT INTO users (telegram_id, username, balance_ton, balance_stars, created_at, updated_at)
-            VALUES (?, ?, 0, 0, ?, ?)
+            VALUES (?, ?, 1000, 100000, ?, ?)
         `, [telegram_id, username, now, now]);
         
         console.log(`👤 New user created: ${telegram_id}`);

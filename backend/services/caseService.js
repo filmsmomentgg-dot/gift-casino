@@ -118,10 +118,16 @@ class CaseService {
             return { success: false, error: 'Invalid currency' };
         }
 
-        // Проверяем баланс
-        const user = await this.db.getUser(telegram_id);
+        // Проверяем баланс (или создаём пользователя если первый визит)
+        let user = await this.db.getUser(telegram_id);
         if (!user) {
-            return { success: false, error: 'User not found' };
+            // Автоматически создаём пользователя с начальным балансом
+            console.log(`📝 Creating new user: ${telegram_id}`);
+            user = await this.db.upsertUser(telegram_id, 'User');
+            
+            if (!user) {
+                return { success: false, error: 'Failed to create user' };
+            }
         }
 
         const currentBalance = currency === 'ton' ? user.balance_ton : user.balance_stars;
