@@ -137,7 +137,7 @@ class CaseService {
         }
 
         // Списываем стоимость кейса
-        const newBalance = await this.db.updateBalance(telegram_id, currency, -price);
+        const newBalance = await this.db.updateBalance(telegram_id, -price, currency);
 
         // СЕРВЕРНЫЙ РАНДОМ - определяем выигрыш
         const wonItem = this._selectRandomItem(caseDef.items);
@@ -219,7 +219,7 @@ class CaseService {
         }
 
         // Начисляем баланс
-        const newBalance = await this.db.updateBalance(telegram_id, currency, sellPrice);
+        const newBalance = await this.db.updateBalance(telegram_id, sellPrice, currency);
 
         return {
             success: true,
