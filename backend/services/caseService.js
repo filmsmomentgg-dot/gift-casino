@@ -7,44 +7,76 @@
 import crypto from 'crypto';
 
 // Определения кейсов (цены и шансы)
+// Шансы настроены так чтобы дешёвые выпадали НАМНОГО чаще
 const CASE_DEFINITIONS = {
     basic: {
         name: 'Basic Case',
-        price: { stars: 100, ton: 0.5 },
+        price: { stars: 50, ton: 0.5 },
         items: [
-            { name: 'Delicious Cake', price: 9, image: 'assets/gifts/delicious-cake.webp', collection: 'Food', chance: 0.35 },
-            { name: 'Blue Star', price: 25, image: 'assets/gifts/blue-star.webp', collection: 'Stars', chance: 0.25 },
-            { name: 'Red Star', price: 50, image: 'assets/gifts/red-star.webp', collection: 'Stars', chance: 0.20 },
-            { name: 'Cookie Heart', price: 75, image: 'assets/gifts/cookie-heart.webp', collection: 'Food', chance: 0.12 },
-            { name: 'Plush Pepe', price: 150, image: 'assets/gifts/plush-pepe.webp', collection: 'Memes', chance: 0.06 },
-            { name: 'Signet Ring', price: 300, image: 'assets/gifts/signet-ring.webp', collection: 'Jewelry', chance: 0.019 },
-            { name: 'Diamond Ring', price: 500, image: 'assets/gifts/diamond-ring.webp', collection: 'Jewelry', chance: 0.001 }
+            // Очень частые (60% суммарно)
+            { name: 'Delicious Cake', price: 5, image: 'assets/gifts/delicious-cake.webp', collection: 'Food', chance: 0.30 },
+            { name: 'Homemade Cake', price: 8, image: 'assets/gifts/homemade-cake.webp', collection: 'Food', chance: 0.20 },
+            { name: 'Ginger Cookie', price: 12, image: 'assets/gifts/ginger-cookie.webp', collection: 'Food', chance: 0.10 },
+            // Частые (25%)
+            { name: 'Blue Star', price: 20, image: 'assets/gifts/blue-star.webp', collection: 'Stars', chance: 0.12 },
+            { name: 'Red Star', price: 35, image: 'assets/gifts/red-star.webp', collection: 'Stars', chance: 0.08 },
+            { name: 'Cookie Heart', price: 50, image: 'assets/gifts/cookie-heart.webp', collection: 'Food', chance: 0.05 },
+            // Редкие (12%)
+            { name: 'Candy Cane', price: 75, image: 'assets/gifts/candy-cane.webp', collection: 'Sweets', chance: 0.06 },
+            { name: 'Berry Box', price: 100, image: 'assets/gifts/berry-box.webp', collection: 'Food', chance: 0.04 },
+            { name: 'Plush Pepe', price: 150, image: 'assets/gifts/plush-pepe.webp', collection: 'Memes', chance: 0.02 },
+            // Очень редкие (3%)
+            { name: 'Heart Locket', price: 250, image: 'assets/gifts/heart-locket.webp', collection: 'Jewelry', chance: 0.02 },
+            { name: 'Signet Ring', price: 400, image: 'assets/gifts/signet-ring.webp', collection: 'Jewelry', chance: 0.009 },
+            { name: 'Diamond Ring', price: 750, image: 'assets/gifts/diamond-ring.webp', collection: 'Jewelry', chance: 0.001 }
         ]
     },
     premium: {
         name: 'Premium Case',
-        price: { stars: 500, ton: 2.5 },
+        price: { stars: 200, ton: 2 },
         items: [
-            { name: 'Plush Pepe', price: 150, image: 'assets/gifts/plush-pepe.webp', collection: 'Memes', chance: 0.30 },
-            { name: 'Signet Ring', price: 300, image: 'assets/gifts/signet-ring.webp', collection: 'Jewelry', chance: 0.25 },
-            { name: 'Diamond Ring', price: 500, image: 'assets/gifts/diamond-ring.webp', collection: 'Jewelry', chance: 0.20 },
-            { name: 'Eternal Rose', price: 750, image: 'assets/gifts/eternal-rose.webp', collection: 'Flowers', chance: 0.13 },
-            { name: 'Vintage Cigar', price: 1000, image: 'assets/gifts/vintage-cigar.webp', collection: 'Luxury', chance: 0.08 },
-            { name: 'Gold Watch', price: 1500, image: 'assets/gifts/gold-watch.webp', collection: 'Luxury', chance: 0.035 },
-            { name: 'Sapphire', price: 2500, image: 'assets/gifts/sapphire.webp', collection: 'Gems', chance: 0.005 }
+            // Частые (50%)
+            { name: 'Cookie Heart', price: 50, image: 'assets/gifts/cookie-heart.webp', collection: 'Food', chance: 0.20 },
+            { name: 'Candy Cane', price: 75, image: 'assets/gifts/candy-cane.webp', collection: 'Sweets', chance: 0.15 },
+            { name: 'Berry Box', price: 100, image: 'assets/gifts/berry-box.webp', collection: 'Food', chance: 0.10 },
+            { name: 'Plush Pepe', price: 150, image: 'assets/gifts/plush-pepe.webp', collection: 'Memes', chance: 0.05 },
+            // Средние (35%)
+            { name: 'Heart Locket', price: 200, image: 'assets/gifts/heart-locket.webp', collection: 'Jewelry', chance: 0.12 },
+            { name: 'Birthday Candle', price: 300, image: 'assets/gifts/bday-candle.webp', collection: 'Party', chance: 0.10 },
+            { name: 'Signet Ring', price: 400, image: 'assets/gifts/signet-ring.webp', collection: 'Jewelry', chance: 0.08 },
+            { name: 'Eternal Rose', price: 500, image: 'assets/gifts/eternal-rose.webp', collection: 'Flowers', chance: 0.05 },
+            // Редкие (13%)
+            { name: 'Diamond Ring', price: 750, image: 'assets/gifts/diamond-ring.webp', collection: 'Jewelry', chance: 0.06 },
+            { name: 'Vintage Cigar', price: 1000, image: 'assets/gifts/vintage-cigar.webp', collection: 'Luxury', chance: 0.04 },
+            { name: 'Gold Watch', price: 1500, image: 'assets/gifts/gold-watch.webp', collection: 'Luxury', chance: 0.025 },
+            // Очень редкие (2%)
+            { name: 'Sapphire', price: 2500, image: 'assets/gifts/sapphire.webp', collection: 'Gems', chance: 0.015 },
+            { name: 'Diamond Crown', price: 5000, image: 'assets/gifts/diamond-crown.webp', collection: 'Royal', chance: 0.005 }
         ]
     },
     legendary: {
         name: 'Legendary Case',
-        price: { stars: 2000, ton: 10 },
+        price: { stars: 1000, ton: 10 },
         items: [
-            { name: 'Eternal Rose', price: 750, image: 'assets/gifts/eternal-rose.webp', collection: 'Flowers', chance: 0.25 },
-            { name: 'Vintage Cigar', price: 1000, image: 'assets/gifts/vintage-cigar.webp', collection: 'Luxury', chance: 0.25 },
-            { name: 'Gold Watch', price: 1500, image: 'assets/gifts/gold-watch.webp', collection: 'Luxury', chance: 0.20 },
-            { name: 'Sapphire', price: 2500, image: 'assets/gifts/sapphire.webp', collection: 'Gems', chance: 0.15 },
-            { name: 'Diamond Crown', price: 5000, image: 'assets/gifts/diamond-crown.webp', collection: 'Royal', chance: 0.10 },
+            // Частые (40%) - всё равно достойные призы
+            { name: 'Plush Pepe', price: 150, image: 'assets/gifts/plush-pepe.webp', collection: 'Memes', chance: 0.15 },
+            { name: 'Heart Locket', price: 200, image: 'assets/gifts/heart-locket.webp', collection: 'Jewelry', chance: 0.12 },
+            { name: 'Birthday Candle', price: 300, image: 'assets/gifts/bday-candle.webp', collection: 'Party', chance: 0.08 },
+            { name: 'Signet Ring', price: 400, image: 'assets/gifts/signet-ring.webp', collection: 'Jewelry', chance: 0.05 },
+            // Средние (35%)
+            { name: 'Eternal Rose', price: 500, image: 'assets/gifts/eternal-rose.webp', collection: 'Flowers', chance: 0.10 },
+            { name: 'Diamond Ring', price: 750, image: 'assets/gifts/diamond-ring.webp', collection: 'Jewelry', chance: 0.08 },
+            { name: 'Vintage Cigar', price: 1000, image: 'assets/gifts/vintage-cigar.webp', collection: 'Luxury', chance: 0.08 },
+            { name: 'Gold Watch', price: 1500, image: 'assets/gifts/gold-watch.webp', collection: 'Luxury', chance: 0.05 },
+            { name: 'Sapphire', price: 2000, image: 'assets/gifts/sapphire.webp', collection: 'Gems', chance: 0.04 },
+            // Редкие (20%)
+            { name: 'Ruby', price: 3000, image: 'assets/gifts/ruby.webp', collection: 'Gems', chance: 0.08 },
+            { name: 'Diamond Crown', price: 5000, image: 'assets/gifts/diamond-crown.webp', collection: 'Royal', chance: 0.06 },
             { name: 'Jester Hat', price: 7500, image: 'assets/gifts/jester-hat.webp', collection: 'Royal', chance: 0.04 },
-            { name: 'Ion Gem', price: 15000, image: 'assets/gifts/ion-gem.webp', collection: 'Ultimate', chance: 0.01 }
+            // Легендарные (5%)
+            { name: 'Ion Gem', price: 10000, image: 'assets/gifts/ion-gem.webp', collection: 'Ultimate', chance: 0.03 },
+            { name: 'Durov Cap', price: 15000, image: 'assets/gifts/durov-cap.webp', collection: 'Ultimate', chance: 0.015 },
+            { name: 'TON Crystal', price: 25000, image: 'assets/gifts/ton-crystal.webp', collection: 'Ultimate', chance: 0.005 }
         ]
     }
 };
