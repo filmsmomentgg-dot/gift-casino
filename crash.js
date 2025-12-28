@@ -77,11 +77,9 @@ function initCrash() {
     const crashBtn = document.getElementById('crashBtn');
     if (crashBtn) {
         let isProcessing = false;
+        let lastTouchTime = 0;
         
         const handleClick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
             // Защита от двойного клика
             if (isProcessing) return;
             isProcessing = true;
@@ -95,12 +93,34 @@ function initCrash() {
             }, 150);
         };
         
-        // Только один обработчик - предпочитаем touchend для мобильных
-        crashBtn.addEventListener('touchend', handleClick, { passive: false });
-        crashBtn.addEventListener('click', function(e) {
-            // Игнорируем click если был touch
-            if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+        // Touch handler для мобильных
+        crashBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            lastTouchTime = Date.now();
             handleClick(e);
+        }, { passive: false });
+        
+        // Click handler для ПК
+        crashBtn.addEventListener('click', function(e) {
+            // Игнорируем click если был недавний touch (300ms)
+            if (Date.now() - lastTouchTime < 300) return;
+            handleClick(e);
+        });
+        
+        // Mousedown для более быстрого отклика на ПК
+        crashBtn.addEventListener('mousedown', function(e) {
+            // Игнорируем если был недавний touch
+            if (Date.now() - lastTouchTime < 300) return;
+            // Визуальный feedback
+            crashBtn.style.transform = 'scale(0.98)';
+        });
+        
+        crashBtn.addEventListener('mouseup', function(e) {
+            crashBtn.style.transform = '';
+        });
+        
+        crashBtn.addEventListener('mouseleave', function(e) {
+            crashBtn.style.transform = '';
         });
     }
     
