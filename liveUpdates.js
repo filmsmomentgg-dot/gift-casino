@@ -4,7 +4,10 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 function connectWebSocket() {
-    const wsUrl = 'ws://localhost:3000';
+    // Auto-detect WebSocket URL based on environment
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = isLocal ? 'ws://localhost:3000' : `${wsProtocol}//${window.location.host}`;
     
     ws = new WebSocket(wsUrl);
     window.liveWs = ws; // Экспортируем для crash.js
@@ -52,8 +55,11 @@ function connectWebSocket() {
 
 // 📊 Fetch gifts from API
 async function fetchGifts() {
+    const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : window.location.origin;
     try {
-        const response = await fetch('http://localhost:3000/api/gifts');
+        const response = await fetch(`${apiBase}/api/gifts`);
         const data = await response.json();
         
         if (data.success) {

@@ -1,7 +1,9 @@
 // 🎮 Telegram Mini App - Main Menu Logic
 
-// API Configuration
-const API_BASE = 'http://localhost:3000';
+// API Configuration - Auto-detect production/development
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : window.location.origin;
 
 // Initialize Telegram Web App
 const tg = window.Telegram?.WebApp;
