@@ -146,29 +146,6 @@ class SecureAPI {
         return this.get('/api/user/stats');
     }
 
-    // ==================== CASES API ====================
-
-    /**
-     * Получить список кейсов
-     */
-    async getCases() {
-        return this.get('/api/cases');
-    }
-
-    /**
-     * Получить информацию о кейсе
-     */
-    async getCaseInfo(caseType) {
-        return this.get(`/api/cases/${caseType}`);
-    }
-
-    /**
-     * ОТКРЫТЬ КЕЙС (серверный рандом!)
-     */
-    async openCase(caseType, currency = 'stars') {
-        return this.post(`/api/cases/${caseType}/open`, { currency });
-    }
-
     // ==================== DEBUG (только разработка) ====================
 
     /**

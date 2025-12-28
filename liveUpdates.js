@@ -75,31 +75,11 @@ async function fetchGifts() {
     }
 }
 
-// 🔄 Update gifts data in UI
+// 🔄 Update gifts data in UI (used for price tracking)
 function updateGiftsData(gifts) {
-    console.log('📦 Received gifts data:', gifts);
+    console.log('📦 Received gifts data:', gifts.length, 'items');
     
-    // Update case modal items
-    const caseItemsContainer = document.querySelector('.case-items');
-    if (caseItemsContainer && gifts.length > 0) {
-        caseItemsContainer.innerHTML = '';
-        
-        gifts.slice(0, 4).forEach(gift => {
-            const item = document.createElement('div');
-            item.className = 'case-item';
-            item.innerHTML = `
-                <img src="${gift.image_path || 'https://via.placeholder.com/40'}" alt="${gift.name}" class="item-image">
-                <span class="item-name">${gift.name}</span>
-                <span class="item-price">
-                    <img src="${gift.currency === 'TON' ? 'TON.png' : 'stars.png'}" alt="${gift.currency}" class="item-price-icon">
-                    ${gift.price}
-                </span>
-            `;
-            caseItemsContainer.appendChild(item);
-        });
-    }
-    
-    // Store for later use
+    // Store for later use (price reference, inventory, etc.)
     window.giftsData = gifts;
 }
 

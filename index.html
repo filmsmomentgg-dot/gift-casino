@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gift Casino - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="styles.css?v=31">
-    <script src="secureApi.js?v=2"></script>
-    <script src="script.js?v=63" defer></script>
+    <link rel="stylesheet" href="styles.css?v=32">
+    <script src="secureApi.js?v=3"></script>
+    <script src="script.js?v=64" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -60,310 +60,53 @@
 
         <!-- 📱 Main Content (Home Tab) -->
         <div class="main-content" id="mainContent">
-            <!-- 🎯 Crash Game Button -->
-            <div class="crash-game-wrapper">
-                <button class="crash-game-btn" id="crashGameBtn">
-                    <img src="stars.png" alt="Star" class="crash-star-icon">
-                    <span class="crash-text">Краш</span>
+            <!-- 🎯 Crash Game Button (Large) -->
+            <div class="crash-game-wrapper crash-main">
+                <button class="crash-game-btn crash-game-btn-large" id="crashGameBtn">
+                    <div class="crash-btn-content">
+                        <div class="crash-icon-wrapper">
+                            <img src="stars.png" alt="Star" class="crash-star-icon">
+                            <div class="crash-glow"></div>
+                        </div>
+                        <div class="crash-btn-text">
+                            <span class="crash-title">🚀 КРАШ</span>
+                            <span class="crash-subtitle">Умножай свой баланс!</span>
+                        </div>
+                    </div>
                 </button>
             </div>
 
-            <!-- 📦 Cases Section -->
-            <div class="cases-section">
-                <!-- 🐸 PEPE Case - 10 TON -->
-                <div class="case-card" data-case="pepe" data-price="10">
-                    <div class="case-image-wrapper">
-                        <img src="case1.png" alt="Case" class="case-image">
-                    </div>
-                    <div class="case-name">🐸 PEPE</div>
-                    <div class="case-price">
-                        <img src="TON.png" alt="TON" class="case-price-icon">
-                        <span class="case-price-amount">10</span>
+            <!-- 📊 Game Stats -->
+            <div class="game-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">🎮</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalGames">0</span>
+                        <span class="stat-label">Игр</span>
                     </div>
                 </div>
-                
-                <!-- 👑 Royal Case - 5 TON -->
-                <div class="case-card" data-case="royal" data-price="5">
-                    <div class="case-image-wrapper">
-                        <img src="case2.png" alt="Case" class="case-image">
-                    </div>
-                    <div class="case-name">👑 Royal</div>
-                    <div class="case-price">
-                        <img src="TON.png" alt="TON" class="case-price-icon">
-                        <span class="case-price-amount">5</span>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalWins">0</span>
+                        <span class="stat-label">Побед</span>
                     </div>
                 </div>
-                
-                <!-- 💎 Premium Case - 2 TON -->
-                <div class="case-card" data-case="premium" data-price="2">
-                    <div class="case-image-wrapper">
-                        <span class="case-emoji">💎</span>
-                    </div>
-                    <div class="case-name">💎 Premium</div>
-                    <div class="case-price">
-                        <img src="TON.png" alt="TON" class="case-price-icon">
-                        <span class="case-price-amount">2</span>
-                    </div>
-                </div>
-                
-                <!-- 🎲 Classic Case - 1 TON -->
-                <div class="case-card" data-case="classic" data-price="1">
-                    <div class="case-image-wrapper">
-                        <span class="case-emoji">🎲</span>
-                    </div>
-                    <div class="case-name">🎲 Classic</div>
-                    <div class="case-price">
-                        <img src="TON.png" alt="TON" class="case-price-icon">
-                        <span class="case-price-amount">1</span>
-                    </div>
-                </div>
-                
-                <!-- 🍀 Lucky Case - 0.50 TON -->
-                <div class="case-card" data-case="lucky" data-price="0.5">
-                    <div class="case-image-wrapper">
-                        <span class="case-emoji">🍀</span>
-                    </div>
-                    <div class="case-name">🍀 Lucky</div>
-                    <div class="case-price">
-                        <img src="TON.png" alt="TON" class="case-price-icon">
-                        <span class="case-price-amount">0.50</span>
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="maxMultiplier">1.00x</span>
+                        <span class="stat-label">Макс</span>
                     </div>
                 </div>
             </div>
-        <!-- 🎁 Case Modal -->
-        <div class="case-modal" id="caseModal">
-            <div class="case-modal-overlay" id="caseModalOverlay"></div>
-            <div class="case-modal-content">
-                <button class="case-modal-close" id="caseModalClose">✕</button>
-                <h2 class="case-modal-title">🐸 PEPE</h2>
-                <div class="case-modal-image-wrapper">
-                    <img src="case1.png" alt="Case" class="case-modal-image">
-                </div>
-                
-                <button class="case-modal-open-btn" id="openCaseBtn">
-                    <span>Открыть за</span>
-                    <img src="TON.png" alt="TON" class="case-price-icon" id="modalPriceIcon">
-                    <span>10</span>
-                </button>
-                
-                <!-- 🎰 Roulette Section -->
-                <div class="roulette-container" id="rouletteContainer" style="display: none;">
-                    <div class="roulette-pointer">▼</div>
-                    <div class="roulette-wrapper">
-                        <div class="roulette-track" id="rouletteTrack">
-                            <!-- Items will be populated by JS -->
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="case-items">
-                    <!-- 🔥 TOP - НЕВЫПАДАЮЩИЕ (Самые дорогие, показываем но НЕ выпадают) -->
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">5000
-                        </div>
-                        <span class="item-emoji">🏆</span>
-                        <div class="item-info">
-                            <span class="item-name">Golden Trophy</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">3500
-                        </div>
-                        <span class="item-emoji">👑</span>
-                        <div class="item-info">
-                            <span class="item-name">Royal Crown</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">2500
-                        </div>
-                        <span class="item-emoji">🎂</span>
-                        <div class="item-info">
-                            <span class="item-name">Delicious Cake</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">1500
-                        </div>
-                        <span class="item-emoji">💎</span>
-                        <div class="item-info">
-                            <span class="item-name">Diamond Gem</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">1000
-                        </div>
-                        <span class="item-emoji">💙</span>
-                        <div class="item-info">
-                            <span class="item-name">Blue Star</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">750
-                        </div>
-                        <span class="item-emoji">🔮</span>
-                        <div class="item-info">
-                            <span class="item-name">Magic Crystal</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
-                    <div class="case-item" data-rarity="impossible" data-droprate="0">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">500
-                        </div>
-                        <span class="item-emoji">💚</span>
-                        <div class="item-info">
-                            <span class="item-name">Green Star</span>
-                        </div>
-                        <span class="item-rarity impossible">0.1%</span>
-                    </div>
 
-                    <!-- 💎 ULTRA RARE - Очень редкие (~5 TON = половина стоимости кейса) -->
-                    <div class="case-item" data-rarity="ultra-rare" data-droprate="0.8">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">6.5
-                        </div>
-                        <span class="item-emoji">🧢</span>
-                        <div class="item-info">
-                            <span class="item-name">Durov's Cap</span>
-                        </div>
-                        <span class="item-rarity ultra-rare">0.8%</span>
-                    </div>
-                    <div class="case-item" data-rarity="ultra-rare" data-droprate="1.2">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">5.8
-                        </div>
-                        <span class="item-emoji">🐸</span>
-                        <div class="item-info">
-                            <span class="item-name">Plush Pepe</span>
-                        </div>
-                        <span class="item-rarity ultra-rare">1.2%</span>
-                    </div>
-                    <div class="case-item" data-rarity="ultra-rare" data-droprate="1.5">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">5.2
-                        </div>
-                        <span class="item-emoji">💖</span>
-                        <div class="item-info">
-                            <span class="item-name">Heart Locket</span>
-                        </div>
-                        <span class="item-rarity ultra-rare">1.5%</span>
-                    </div>
-                    <div class="case-item" data-rarity="ultra-rare" data-droprate="2">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">4.8
-                        </div>
-                        <span class="item-emoji">💍</span>
-                        <div class="item-info">
-                            <span class="item-name">Diamond Ring</span>
-                        </div>
-                        <span class="item-rarity ultra-rare">2%</span>
-                    </div>
-                    <div class="case-item" data-rarity="ultra-rare" data-droprate="2.5">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">4.5
-                        </div>
-                        <span class="item-emoji">⭐</span>
-                        <div class="item-info">
-                            <span class="item-name">Golden Star</span>
-                        </div>
-                        <span class="item-rarity ultra-rare">2.5%</span>
-                    </div>
-
-                    <!-- 🎯 МУСОРНЫЕ - Дешевые подарки (выпадают часто) -->
-                    <div class="case-item" data-rarity="common" data-droprate="15">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.8
-                        </div>
-                        <span class="item-emoji">🍬</span>
-                        <div class="item-info">
-                            <span class="item-name">Candy</span>
-                        </div>
-                        <span class="item-rarity common">15%</span>
-                    </div>
-                    <div class="case-item" data-rarity="common" data-droprate="18">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.6
-                        </div>
-                        <span class="item-emoji">🎈</span>
-                        <div class="item-info">
-                            <span class="item-name">Balloon</span>
-                        </div>
-                        <span class="item-rarity common">18%</span>
-                    </div>
-                    <div class="case-item" data-rarity="common" data-droprate="20">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.5
-                        </div>
-                        <span class="item-emoji">🎊</span>
-                        <div class="item-info">
-                            <span class="item-name">Confetti</span>
-                        </div>
-                        <span class="item-rarity common">20%</span>
-                    </div>
-                    <div class="case-item" data-rarity="common" data-droprate="22">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.4
-                        </div>
-                        <span class="item-emoji">🧸</span>
-                        <div class="item-info">
-                            <span class="item-name">Toy Bear</span>
-                        </div>
-                        <span class="item-rarity common">22%</span>
-                    </div>
-                    <div class="case-item" data-rarity="common" data-droprate="12">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.3
-                        </div>
-                        <span class="item-emoji">🍭</span>
-                        <div class="item-info">
-                            <span class="item-name">Lollipop</span>
-                        </div>
-                        <span class="item-rarity common">12%</span>
-                    </div>
-                    <div class="case-item" data-rarity="common" data-droprate="8">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.2
-                        </div>
-                        <span class="item-emoji">🎉</span>
-                        <div class="item-info">
-                            <span class="item-name">Party Popper</span>
-                        </div>
-                        <span class="item-rarity common">8%</span>
-                    </div>
-                    <div class="case-item" data-rarity="common" data-droprate="6">
-                        <div class="item-price">
-                            <img src="TON.png" alt="TON" class="item-price-icon">0.1
-                        </div>
-                        <span class="item-emoji">🎀</span>
-                        <div class="item-info">
-                            <span class="item-name">Ribbon</span>
-                        </div>
-                        <span class="item-rarity common">6%</span>
-                    </div>
+            <!-- 📈 Recent Crashes -->
+            <div class="recent-crashes-section">
+                <h3 class="section-title">📈 Последние раунды</h3>
+                <div class="recent-crashes" id="recentCrashes">
+                    <!-- Will be populated by JS -->
                 </div>
-            </div>
-        </div>
-        </div><!-- /main-content -->
-        
-        <!-- 🎉 Win Modal (Full Screen) -->
-        <div class="win-modal" id="winModal" style="display: none;">
-            <div class="win-content">
-                <div class="win-title">🎉 Поздравляем!</div>
-                <div class="win-item" id="winItem"></div>
-                <div class="win-price" id="winPrice"></div>
-                <button class="win-btn" id="winBtn">Забрать</button>
             </div>
         </div>
 
@@ -425,7 +168,7 @@
                 <div class="inventory-empty" id="inventoryEmpty">
                     <span class="empty-icon">📦</span>
                     <span class="empty-text">Инвентарь пуст</span>
-                    <span class="empty-hint">Выиграйте подарки в кейсах!</span>
+                    <span class="empty-hint">Играйте в Краш чтобы выиграть!</span>
                 </div>
                 <div class="inventory-items" id="inventoryItems">
                     <!-- Items will be populated by JS -->
@@ -457,10 +200,9 @@
             </button>
         </footer>
 
-
     </div>
 
-    <script src="crash.js?v=53"></script>
-    <script src="liveUpdates.js?v=51" type="module"></script>
+    <script src="crash.js?v=54"></script>
+    <script src="liveUpdates.js?v=52" type="module"></script>
 </body>
 </html>
