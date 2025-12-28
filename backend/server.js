@@ -117,8 +117,36 @@ async function handleCrashMessage(ws, msg) {
     switch (type) {
         // 🔐 Аутентификация WebSocket
         case 'auth':
-            if (!initData) {
-                ws.send(JSON.stringify({ type: 'auth_result', success: false, error: 'No initData' }));
+            if (!initData || initData === '') {
+                // 🔧 Dev fallback - для тестирования без Telegram
+                console.warn('⚠️ No initData - using dev fallback user for WebSocket');
+                ws.telegramUser = {
+                    id: 123456789,
+                    firstName: 'Dev',
+                    lastName: 'User',
+                    username: 'devuser',
+                    languageCode: 'ru',
+                    isPremium: false,
+                    authDate: Math.floor(Date.now() / 1000)
+                };
+                ws.isAuthenticated = true;
+                
+                // Создаём/обновляем пользователя в БД
+                await db.upsertUser(ws.telegramUser.id, 'DevUser');
+                
+                // Получаем баланс
+                const devBalance = await db.getFullBalance(ws.telegramUser.id);
+                
+                console.log(`🔐 WebSocket dev fallback authenticated`);
+                
+                ws.send(JSON.stringify({ 
+                    type: 'auth_result', 
+                    success: true,
+                    user: ws.telegramUser,
+                    balance: devBalance,
+                    hasBet: false,
+                    betAmount: 0
+                }));
                 return;
             }
             

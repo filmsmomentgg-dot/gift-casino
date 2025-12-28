@@ -175,16 +175,13 @@ function authenticateWebSocket() {
     }
     
     const initData = tg?.initData;
-    if (initData) {
-        console.log('🔐 Sending WebSocket auth...');
-        window.liveWs.send(JSON.stringify({
-            type: 'auth',
-            initData: initData
-        }));
-    } else {
-        console.warn('⚠️ No Telegram initData - running in dev mode');
-        crashState.isAuthenticated = true; // Dev mode
-    }
+    console.log('🔐 Sending WebSocket auth...', initData ? 'with initData' : 'dev mode');
+    
+    // Всегда отправляем auth - сервер обработает dev fallback если нет initData
+    window.liveWs.send(JSON.stringify({
+        type: 'auth',
+        initData: initData || ''
+    }));
 }
 
 // 🔐 Обработка сообщений от сервера - ПРИВАТНАЯ ФУНКЦИЯ
