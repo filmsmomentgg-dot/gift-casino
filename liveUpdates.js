@@ -24,10 +24,15 @@ function connectWebSocket() {
             updateGiftsData(message.data);
         }
         
-        // Crash game messages
-        if (message.type && message.type.startsWith('crash_')) {
-            if (typeof window.handleCrashServerMessage === 'function') {
-                window.handleCrashServerMessage(message);
+        // 🔐 Crash game messages - используем защищённый обработчик
+        // auth_result и balance_update тоже обрабатываем
+        if (message.type && (
+            message.type.startsWith('crash_') || 
+            message.type === 'auth_result' || 
+            message.type === 'balance_update'
+        )) {
+            if (typeof window._crashMsgHandler === 'function') {
+                window._crashMsgHandler(message);
             }
         }
     };

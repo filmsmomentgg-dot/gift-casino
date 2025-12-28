@@ -1,12 +1,19 @@
 /**
- * 🎰 CRASH GAME SERVICE
+ * 🎰 CRASH GAME SERVICE - SECURE VERSION
  * Серверная логика для игры Crash
  * Работает 24/7, синхронизирована для всех клиентов
+ * 
+ * 🔐 БЕЗОПАСНОСТЬ:
+ * - Баланс хранится ТОЛЬКО на сервере
+ * - Order ID генерируется СЕРВЕРОМ
+ * - Все ставки привязаны к telegram_id
+ * - Никнейм берётся из проверенного initData
  */
 
 export class CrashGameService {
-    constructor(wss) {
+    constructor(wss, database) {
         this.wss = wss;
+        this.db = database; // Ссылка на DatabaseService
         
         // Состояние игры
         this.state = {
@@ -16,9 +23,15 @@ export class CrashGameService {
             startTime: 0,
             countdownTime: 0,
             history: [],
-            bets: new Map(), // oderId -> { oderId, amount, currency }
-            hadBetsThisRound: false // Были ли ставки в этом раунде
+            bets: new Map(), // oderId -> { oderId, telegramId, amount, currency, ... }
+            hadBetsThisRound: false
         };
+        
+        // Маппинг telegramId -> oderId для быстрого поиска
+        this.userBets = new Map(); // telegramId -> oderId
+        
+        // Счётчик для генерации уникальных Order ID
+        this.orderCounter = Date.now();
         
         // Таймеры
         this.animationInterval = null;
@@ -29,6 +42,15 @@ export class CrashGameService {
         
         // Запускаем игру
         this.startNewRound();
+    }
+    
+    /**
+     * 🔐 Генерация безопасного Order ID
+     */
+    generateOrderId() {
+        this.orderCounter++;
+        const random = Math.random().toString(36).substring(2, 8);
+        return `crash_${this.orderCounter}_${random}`;
     }
     
     // Загрузка истории
@@ -58,7 +80,8 @@ export class CrashGameService {
         this.state.multiplier = 1.00;
         this.state.crashPoint = this.generateCrashPoint();
         this.state.bets.clear();
-        this.state.hadBetsThisRound = false; // Сбрасываем флаг
+        this.userBets.clear(); // Очищаем маппинг
+        this.state.hadBetsThisRound = false;
         
         this.broadcast({
             type: 'crash_waiting',
@@ -160,37 +183,91 @@ export class CrashGameService {
         setTimeout(() => this.startNewRound(), 3000);
     }
     
-    // Размещение ставки
-    placeBet(oderId, amount, currency, autoCashout = 0, nickname = 'Игрок') {
+    // 🔐 Размещение ставки - БЕЗОПАСНАЯ ВЕРСИЯ
+    // telegramId и nickname приходят из ПРОВЕРЕННОГО initData
+    async placeBet(telegramId, amount, currency, autoCashout = 0, nickname = 'Игрок') {
         if (this.state.phase !== 'waiting' && this.state.phase !== 'countdown') {
             return { success: false, error: 'Раунд уже идёт' };
         }
         
-        if (this.state.bets.has(oderId)) {
+        // Проверяем что у пользователя нет активной ставки
+        if (this.userBets.has(telegramId)) {
             return { success: false, error: 'Ставка уже сделана' };
         }
         
-        this.state.bets.set(oderId, {
-            oderId,
-            amount,
-            currency,
-            autoCashout: autoCashout > 1 ? autoCashout : 0,
-            nickname,
-            placedAt: Date.now()
-        });
+        // Минимальные ставки
+        const minBet = currency === 'ton' ? 0.10 : 20;
+        if (amount < minBet) {
+            return { success: false, error: `Минимальная ставка: ${minBet} ${currency}` };
+        }
         
-        // Отмечаем что в этом раунде были ставки
-        this.state.hadBetsThisRound = true;
+        // 🔐 ПРОВЕРЯЕМ БАЛАНС В БАЗЕ ДАННЫХ
+        if (!this.db) {
+            console.error('❌ Database not connected to CrashGame');
+            return { success: false, error: 'Ошибка сервера' };
+        }
         
-        console.log(`🎰 Bet placed: ${amount} ${currency} by ${oderId}`);
-        
-        return { success: true };
+        try {
+            const user = await this.db.getUser(telegramId);
+            if (!user) {
+                return { success: false, error: 'Пользователь не найден' };
+            }
+            
+            const balance = currency === 'ton' ? user.balance_ton : user.balance_stars;
+            
+            if (balance < amount) {
+                return { success: false, error: 'Недостаточно средств' };
+            }
+            
+            // 🔐 СПИСЫВАЕМ БАЛАНС НА СЕРВЕРЕ
+            await this.db.updateBalance(telegramId, currency, -amount);
+            
+            // Генерируем Order ID на СЕРВЕРЕ
+            const oderId = this.generateOrderId();
+            
+            this.state.bets.set(oderId, {
+                oderId,
+                telegramId,
+                amount,
+                currency,
+                autoCashout: autoCashout > 1 ? autoCashout : 0,
+                nickname,
+                placedAt: Date.now()
+            });
+            
+            // Сохраняем маппинг telegramId -> oderId
+            this.userBets.set(telegramId, oderId);
+            
+            this.state.hadBetsThisRound = true;
+            
+            console.log(`🎰 Bet placed: ${amount} ${currency} by ${telegramId} (${nickname}), orderId: ${oderId}`);
+            
+            // Возвращаем новый баланс и orderId
+            const newBalance = await this.db.getFullBalance(telegramId);
+            
+            return { 
+                success: true, 
+                oderId,
+                balance: newBalance
+            };
+            
+        } catch (error) {
+            console.error('❌ PlaceBet error:', error);
+            return { success: false, error: 'Ошибка сервера' };
+        }
     }
     
-    // Кешаут (isAuto = true если это авто-кешаут)
-    cashout(oderId, isAuto = false) {
+    // 🔐 Кешаут - БЕЗОПАСНАЯ ВЕРСИЯ
+    // telegramId приходит из ПРОВЕРЕННОГО initData
+    async cashout(telegramId, isAuto = false) {
         if (this.state.phase !== 'running') {
             return { success: false, error: 'Раунд ещё не начался' };
+        }
+        
+        // Находим ставку по telegramId
+        const oderId = this.userBets.get(telegramId);
+        if (!oderId) {
+            return { success: false, error: 'Ставка не найдена' };
         }
         
         const bet = this.state.bets.get(oderId);
@@ -200,32 +277,51 @@ export class CrashGameService {
         
         const winAmount = bet.amount * this.state.multiplier;
         
-        this.state.bets.delete(oderId);
-        
-        this.broadcast({
-            type: 'crash_cashout',
-            oderId: oderId,
-            nickname: bet.nickname || 'Игрок',
-            amount: winAmount,
-            multiplier: this.state.multiplier,
-            currency: bet.currency,
-            isAutoCashout: isAuto // Флаг чтобы клиент знал это авто или ручной
-        });
-        
-        console.log(`💰 Cashout: ${winAmount.toFixed(2)} ${bet.currency} at ${this.state.multiplier}x ${isAuto ? '(auto)' : ''}`);
-        
-        return {
-            success: true,
-            amount: winAmount,
-            multiplier: this.state.multiplier,
-            currency: bet.currency
-        };
+        // 🔐 НАЧИСЛЯЕМ ВЫИГРЫШ НА СЕРВЕРЕ
+        try {
+            await this.db.updateBalance(telegramId, bet.currency, winAmount);
+            
+            this.state.bets.delete(oderId);
+            this.userBets.delete(telegramId);
+            
+            // Получаем новый баланс
+            const newBalance = await this.db.getFullBalance(telegramId);
+            
+            this.broadcast({
+                type: 'crash_cashout',
+                oderId: oderId,
+                nickname: bet.nickname || 'Игрок',
+                amount: winAmount,
+                multiplier: this.state.multiplier,
+                currency: bet.currency,
+                isAutoCashout: isAuto
+            });
+            
+            console.log(`💰 Cashout: ${winAmount.toFixed(2)} ${bet.currency} at ${this.state.multiplier}x ${isAuto ? '(auto)' : ''}`);
+            
+            return {
+                success: true,
+                amount: winAmount,
+                multiplier: this.state.multiplier,
+                currency: bet.currency,
+                balance: newBalance // 🔐 Возвращаем актуальный баланс
+            };
+            
+        } catch (error) {
+            console.error('❌ Cashout error:', error);
+            return { success: false, error: 'Ошибка сервера' };
+        }
     }
     
-    // Отмена ставки
-    cancelBet(oderId) {
+    // 🔐 Отмена ставки - БЕЗОПАСНАЯ ВЕРСИЯ
+    async cancelBet(telegramId) {
         if (this.state.phase !== 'waiting') {
             return { success: false, error: 'Отмена недоступна' };
+        }
+        
+        const oderId = this.userBets.get(telegramId);
+        if (!oderId) {
+            return { success: false, error: 'Ставка не найдена' };
         }
         
         const bet = this.state.bets.get(oderId);
@@ -233,20 +329,33 @@ export class CrashGameService {
             return { success: false, error: 'Ставка не найдена' };
         }
         
-        this.state.bets.delete(oderId);
-        
-        return {
-            success: true,
-            amount: bet.amount,
-            currency: bet.currency
-        };
+        // 🔐 ВОЗВРАЩАЕМ ДЕНЬГИ НА СЕРВЕРЕ
+        try {
+            await this.db.updateBalance(telegramId, bet.currency, bet.amount);
+            
+            this.state.bets.delete(oderId);
+            this.userBets.delete(telegramId);
+            
+            const newBalance = await this.db.getFullBalance(telegramId);
+            
+            return {
+                success: true,
+                amount: bet.amount,
+                currency: bet.currency,
+                balance: newBalance
+            };
+            
+        } catch (error) {
+            console.error('❌ CancelBet error:', error);
+            return { success: false, error: 'Ошибка сервера' };
+        }
     }
     
     // Проверка авто-кешаутов
-    checkAutoCashouts() {
+    async checkAutoCashouts() {
         for (const [oderId, bet] of this.state.bets) {
             if (bet.autoCashout > 0 && this.state.multiplier >= bet.autoCashout) {
-                this.cashout(oderId, true); // isAuto = true
+                await this.cashout(bet.telegramId, true); // isAuto = true
             }
         }
     }
@@ -262,9 +371,16 @@ export class CrashGameService {
         };
     }
     
-    // Есть ли ставка
-    hasBet(oderId) {
-        return this.state.bets.has(oderId);
+    // 🔐 Есть ли ставка у пользователя (по telegramId)
+    hasBet(telegramId) {
+        return this.userBets.has(telegramId);
+    }
+    
+    // 🔐 Получить ставку пользователя
+    getUserBet(telegramId) {
+        const oderId = this.userBets.get(telegramId);
+        if (!oderId) return null;
+        return this.state.bets.get(oderId);
     }
     
     // Отправка всем клиентам

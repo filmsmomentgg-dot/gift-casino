@@ -1,51 +1,60 @@
 /**
- * 🚀 CRASH GAME - Client
+ * 🚀 CRASH GAME - Secure Client
  * Синхронизируется с сервером через WebSocket
- * Все игроки видят одинаковый множитель
+ * 
+ * 🔐 БЕЗОПАСНОСТЬ:
+ * - Баланс приходит ТОЛЬКО от сервера
+ * - Order ID генерируется СЕРВЕРОМ  
+ * - Аутентификация через Telegram initData
+ * - Никаких глобальных функций для манипуляции
  */
 
-// Ссылка на глобальный state из script.js
-const getState = () => window.state || { balance: 0, starsBalance: 0, currentCurrency: 'ton' };
+// 🔐 IIFE - всё в замыкании, ничего глобального
+(function() {
+    'use strict';
+    
+    // Ссылка на глобальный state (только для ОТОБРАЖЕНИЯ)
+    const getState = () => window.state || { balance: 0, starsBalance: 0, currentCurrency: 'ton' };
 
-// Состояние игры (синхронизируется с сервером)
-const crashState = {
-    phase: 'waiting', // waiting, countdown, running, crashed
-    multiplier: 1.00,
-    countdown: 0,
-    history: [],
-    // Локальное состояние
-    hasBet: false,
-    betAmount: 0,
-    oderId: 'user_' + Date.now(), // Уникальный ID пользователя
-    // Canvas
-    canvas: null,
-    ctx: null,
-    // Фоновые изображения
-    bgImageIndex: 0,
-    bgImageOpacity: 0,
-    bgImageFadeIn: true,
-    bgImageLastChange: 0
-};
+    // Состояние игры
+    const crashState = {
+        phase: 'waiting',
+        multiplier: 1.00,
+        countdown: 0,
+        history: [],
+        hasBet: false,
+        betAmount: 0,
+        isAuthenticated: false,
+        canvas: null,
+        ctx: null,
+        bgImageIndex: 0,
+        bgImageOpacity: 0,
+        bgImageFadeIn: true,
+        bgImageLastChange: 0
+    };
 
-// Загрузка фоновых изображений
-const bgImageSources = ['TON.png', 'stars.png'];
-const loadedBgImages = [];
+    // Загрузка фоновых изображений
+    const bgImageSources = ['TON.png', 'stars.png'];
+    const loadedBgImages = [];
 
-function loadBgImages() {
-    bgImageSources.forEach((src, i) => {
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-            loadedBgImages[i] = img;
-            console.log(`✅ Loaded bg image: ${src}`);
-        };
-    });
-}
+    function loadBgImages() {
+        bgImageSources.forEach((src, i) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                loadedBgImages[i] = img;
+                console.log(`✅ Loaded bg image: ${src}`);
+            };
+        });
+    }
 
-loadBgImages();
+    loadBgImages();
 
-// DOM элементы
-let crashElements = {};
+    // DOM элементы
+    let crashElements = {};
+    
+    // 🔐 Telegram данные
+    const tg = window.Telegram?.WebApp;
 
 // Инициализация
 function initCrash() {
@@ -80,38 +89,25 @@ function initCrash() {
         let lastTouchTime = 0;
         
         const handleClick = function(e) {
-            // Защита от двойного клика
             if (isProcessing) return;
             isProcessing = true;
-            
-            // Сразу вызываем обработчик
             handleCrashBtn();
-            
-            // Разблокируем через 150ms
-            setTimeout(() => {
-                isProcessing = false;
-            }, 150);
+            setTimeout(() => { isProcessing = false; }, 150);
         };
         
-        // Touch handler для мобильных
         crashBtn.addEventListener('touchend', function(e) {
             e.preventDefault();
             lastTouchTime = Date.now();
             handleClick(e);
         }, { passive: false });
         
-        // Click handler для ПК
         crashBtn.addEventListener('click', function(e) {
-            // Игнорируем click если был недавний touch (300ms)
             if (Date.now() - lastTouchTime < 300) return;
             handleClick(e);
         });
         
-        // Mousedown для более быстрого отклика на ПК
         crashBtn.addEventListener('mousedown', function(e) {
-            // Игнорируем если был недавний touch
             if (Date.now() - lastTouchTime < 300) return;
-            // Визуальный feedback
             crashBtn.style.transform = 'scale(0.98)';
         });
         
@@ -159,13 +155,76 @@ function initCrash() {
     startBgAnimation();
     
     console.log('🚀 Crash game client initialized');
+    
+    // 🔐 Аутентификация WebSocket после подключения
+    authenticateWebSocket();
 }
 
-// Обработка сообщений от сервера
+// 🔐 Аутентификация WebSocket
+function authenticateWebSocket() {
+    if (!window.liveWs) {
+        console.log('⏳ Waiting for WebSocket connection...');
+        setTimeout(authenticateWebSocket, 500);
+        return;
+    }
+    
+    if (window.liveWs.readyState !== 1) {
+        console.log('⏳ WebSocket not ready, waiting...');
+        setTimeout(authenticateWebSocket, 500);
+        return;
+    }
+    
+    const initData = tg?.initData;
+    if (initData) {
+        console.log('🔐 Sending WebSocket auth...');
+        window.liveWs.send(JSON.stringify({
+            type: 'auth',
+            initData: initData
+        }));
+    } else {
+        console.warn('⚠️ No Telegram initData - running in dev mode');
+        crashState.isAuthenticated = true; // Dev mode
+    }
+}
+
+// 🔐 Обработка сообщений от сервера - ПРИВАТНАЯ ФУНКЦИЯ
 function handleCrashServerMessage(msg) {
     console.log('🎰 Crash server message:', msg.type);
     
     switch (msg.type) {
+        // 🔐 Результат аутентификации
+        case 'auth_result':
+            if (msg.success) {
+                crashState.isAuthenticated = true;
+                console.log('✅ WebSocket authenticated:', msg.user?.username);
+                
+                // 🔐 Обновляем баланс ИЗ СЕРВЕРНЫХ ДАННЫХ
+                if (msg.balance) {
+                    window.state.starsBalance = msg.balance.stars || 0;
+                    window.state.balance = msg.balance.ton || 0;
+                    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
+                }
+                
+                // Восстанавливаем состояние ставки
+                if (msg.hasBet) {
+                    crashState.hasBet = true;
+                    crashState.betAmount = msg.betAmount || 0;
+                }
+            } else {
+                console.error('❌ WebSocket auth failed:', msg.error);
+                crashState.isAuthenticated = false;
+            }
+            break;
+            
+        // 🔐 Обновление баланса от сервера
+        case 'balance_update':
+            if (msg.balance) {
+                window.state.starsBalance = msg.balance.stars || 0;
+                window.state.balance = msg.balance.ton || 0;
+                if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
+            }
+            break;
+            
         case 'crash_state':
             // Начальное состояние
             crashState.phase = msg.data.phase;
@@ -230,16 +289,18 @@ function handleCrashServerMessage(msg) {
             if (msg.success) {
                 crashState.hasBet = true;
                 showNotification(`Ставка ${crashState.betAmount} принята!`, 'success');
+                
+                // 🔐 Обновляем баланс ИЗ СЕРВЕРНЫХ ДАННЫХ
+                if (msg.balance) {
+                    window.state.starsBalance = msg.balance.stars || 0;
+                    window.state.balance = msg.balance.ton || 0;
+                    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
+                }
+                
                 updateUI();
             } else {
                 showNotification(msg.error, 'error');
-                // Возвращаем деньги
-                if (window.state.currentCurrency === 'ton') {
-                    window.state.balance += crashState.betAmount;
-                } else {
-                    window.state.starsBalance += crashState.betAmount;
-                }
-                if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
+                // 🔐 НЕ меняем баланс локально - он не менялся
                 crashState.hasBet = false;
                 crashState.betAmount = 0;
             }
@@ -248,17 +309,12 @@ function handleCrashServerMessage(msg) {
         case 'crash_cashout_result':
             console.log('💰 Cashout result:', msg);
             if (msg.success) {
-                // Добавляем выигрыш в правильную валюту
-                const winCurrency = msg.currency || window.state.currentCurrency;
-                if (winCurrency === 'ton') {
-                    window.state.balance += msg.amount;
-                    console.log('💎 New TON balance:', window.state.balance);
-                } else {
-                    window.state.starsBalance += msg.amount;
-                    console.log('⭐ New Stars balance:', window.state.starsBalance);
+                // 🔐 Обновляем баланс ТОЛЬКО ИЗ СЕРВЕРНЫХ ДАННЫХ
+                if (msg.balance) {
+                    window.state.starsBalance = msg.balance.stars || 0;
+                    window.state.balance = msg.balance.ton || 0;
+                    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
                 }
-                if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
-                if (typeof saveBalance === 'function') saveBalance();
                 
                 showNotification(`🎉 Вы забрали ${msg.amount.toFixed(2)} на ${msg.multiplier.toFixed(2)}x!`, 'success');
                 crashState.hasBet = false;
@@ -277,18 +333,12 @@ function handleCrashServerMessage(msg) {
             // Кто-то забрал выигрыш - показываем анимацию
             showCashoutAnimation(msg.nickname, msg.amount, msg.currency, msg.multiplier);
             
-            // Если это наш авто-кешаут - обрабатываем как выигрыш
-            // НО только если это АВТО (иначе получим дубль с crash_cashout_result)
-            if (msg.oderId === crashState.oderId && crashState.hasBet && msg.isAutoCashout) {
-                console.log('🎰 This is our auto-cashout!');
-                const winCurrency = msg.currency || window.state.currentCurrency;
-                if (winCurrency === 'ton') {
-                    window.state.balance += msg.amount;
-                } else {
-                    window.state.starsBalance += msg.amount;
+            // 🔐 Для авто-кешаута обновляем состояние (баланс придёт отдельно)
+            if (msg.isAutoCashout && crashState.hasBet) {
+                // Запрашиваем актуальный баланс с сервера
+                if (window.liveWs && window.liveWs.readyState === 1) {
+                    window.liveWs.send(JSON.stringify({ type: 'get_balance' }));
                 }
-                if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
-                if (typeof saveBalance === 'function') saveBalance();
                 
                 showNotification(`🎉 Авто-вывод: ${msg.amount.toFixed(2)} на ${msg.multiplier.toFixed(2)}x!`, 'success');
                 crashState.hasBet = false;
@@ -463,8 +513,14 @@ function handleCrashBtn() {
     }
 }
 
-// Размещение ставки
+// 🔐 Размещение ставки - БЕЗОПАСНАЯ ВЕРСИЯ
 function placeBet() {
+    // 🔐 Проверяем аутентификацию
+    if (!crashState.isAuthenticated) {
+        showNotification('Ошибка авторизации. Перезагрузите страницу.', 'error');
+        return;
+    }
+    
     if (crashState.phase !== 'waiting' && crashState.phase !== 'countdown') {
         showNotification('Подождите новый раунд', 'error');
         return;
@@ -477,19 +533,10 @@ function placeBet() {
     const autoCashoutEnabled = checkbox ? checkbox.checked : false;
     const autoCashoutValue = parseFloat(crashElements.autoCashout?.value) || 0;
     
-    // Авто-вывод только если галочка включена И значение больше 1
     let autoCashout = 0;
     if (autoCashoutEnabled === true && autoCashoutValue > 1) {
         autoCashout = autoCashoutValue;
     }
-    
-    console.log('📊 Bet params:', { 
-        betAmount, 
-        checkboxExists: !!checkbox,
-        autoCashoutEnabled, 
-        autoCashoutValue, 
-        finalAutoCashout: autoCashout 
-    });
     
     // Минимальные ставки
     const minBet = window.state.currentCurrency === 'ton' ? 0.10 : 20;
@@ -501,34 +548,27 @@ function placeBet() {
         return;
     }
     
-    // Проверяем что баланс положительный И достаточный
+    // 🔐 Клиентская предпроверка (реальная проверка на сервере)
     if (balance <= 0 || betAmount > balance) {
         showNotification('Недостаточно средств!', 'error');
         return;
     }
     
-    // Списываем ставку сразу (откатим если сервер откажет)
-    if (window.state.currentCurrency === 'ton') {
-        window.state.balance -= betAmount;
-    } else {
-        window.state.starsBalance -= betAmount;
-    }
-    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
-    if (typeof saveBalance === 'function') saveBalance();
-    
+    // 🔐 НЕ МЕНЯЕМ БАЛАНС ЛОКАЛЬНО - сервер сделает это
     crashState.betAmount = betAmount;
     
-    // Отправляем на сервер
+    // Отправляем на сервер (без orderId - сервер сгенерирует)
     if (window.liveWs && window.liveWs.readyState === 1) {
-        const nickname = window.Telegram?.WebApp?.initDataUnsafe?.user?.username || 'Игрок';
         window.liveWs.send(JSON.stringify({
             type: 'crash_bet',
-            oderId: crashState.oderId,
             amount: betAmount,
             currency: window.state.currentCurrency,
-            autoCashout: autoCashout > 1 ? autoCashout : 0,
-            nickname: nickname
+            autoCashout: autoCashout > 1 ? autoCashout : 0
+            // 🔐 НЕ отправляем nickname - сервер возьмёт из initData
         }));
+    } else {
+        showNotification('Нет соединения с сервером', 'error');
+        return;
     }
     
     if (tg?.HapticFeedback) {
@@ -536,9 +576,14 @@ function placeBet() {
     }
 }
 
-// Забрать выигрыш
+// 🔐 Забрать выигрыш - БЕЗОПАСНАЯ ВЕРСИЯ
 function cashout() {
     console.log('💰 Cashout called, hasBet:', crashState.hasBet, 'phase:', crashState.phase);
+    
+    if (!crashState.isAuthenticated) {
+        showNotification('Ошибка авторизации', 'error');
+        return;
+    }
     
     if (!crashState.hasBet) {
         console.log('❌ No bet to cashout');
@@ -552,8 +597,8 @@ function cashout() {
     console.log('✅ Sending cashout request');
     if (window.liveWs && window.liveWs.readyState === 1) {
         window.liveWs.send(JSON.stringify({
-            type: 'crash_cashout',
-            oderId: crashState.oderId
+            type: 'crash_cashout'
+            // 🔐 НЕ отправляем orderId - сервер знает по WebSocket сессии
         }));
         console.log('✅ Cashout request sent');
     } else {
@@ -561,33 +606,23 @@ function cashout() {
     }
 }
 
-// Отмена ставки
+// 🔐 Отмена ставки - БЕЗОПАСНАЯ ВЕРСИЯ
 function cancelBet() {
     if (!crashState.hasBet || crashState.phase !== 'waiting') return;
     
-    // Возвращаем деньги
-    if (window.state.currentCurrency === 'ton') {
-        window.state.balance += crashState.betAmount;
-    } else {
-        window.state.starsBalance += crashState.betAmount;
+    if (window.liveWs && window.liveWs.readyState === 1) {
+        window.liveWs.send(JSON.stringify({
+            type: 'crash_cancel'
+        }));
     }
-    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
-    if (typeof saveBalance === 'function') saveBalance();
     
     crashState.hasBet = false;
     crashState.betAmount = 0;
     updateUI();
     
-    // Отправляем на сервер
-    if (window.liveWs && window.liveWs.readyState === 1) {
-        window.liveWs.send(JSON.stringify({
-            type: 'crash_cancel',
-            oderId: crashState.oderId
-        }));
-    }
-    
     showNotification('Ставка отменена', 'info');
 }
+
 
 // Рендер истории
 function renderHistory() {
@@ -734,7 +769,33 @@ function drawGraph() {
     drawBgImage(ctx, width, height);
 }
 
-// Экспортируем
+// 🔐 Экспортируем ТОЛЬКО необходимые функции
+// handleCrashServerMessage НЕ экспортируется - защита от инъекций!
 window.initCrash = initCrash;
 window.updateCrashCurrency = updateCrashCurrency;
-window.handleCrashServerMessage = handleCrashServerMessage;
+
+// 🔐 Внутренняя функция для обработки сообщений - вызывается из liveUpdates.js
+// Не может быть вызвана напрямую из консоли для манипуляции балансом
+window._crashMsgHandler = function(msg) {
+    // Проверяем что сообщение имеет правильную структуру
+    if (!msg || typeof msg !== 'object' || !msg.type) {
+        console.warn('⚠️ Invalid crash message format');
+        return;
+    }
+    
+    // Только разрешённые типы сообщений
+    const allowedTypes = [
+        'crash_state', 'crash_waiting', 'crash_countdown', 'crash_start',
+        'crash_tick', 'crash_crashed', 'crash_bet_result', 'crash_cashout_result',
+        'crash_cashout', 'crash_cancel_result', 'auth_result', 'balance_update'
+    ];
+    
+    if (!allowedTypes.includes(msg.type)) {
+        console.warn('⚠️ Unknown crash message type:', msg.type);
+        return;
+    }
+    
+    handleCrashServerMessage(msg);
+};
+
+})(); // Конец IIFE

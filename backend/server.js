@@ -17,6 +17,7 @@ import { initRoutes } from './routes/api.js';
 import { initBotRoutes } from './routes/bot.js';
 import { initSecureRoutes } from './routes/secureApi.js';
 import { CrashGameService } from './services/crashGame.js';
+import { verifyTelegramWebAppData } from './services/telegramAuth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,13 +63,17 @@ giftSync.start();
 // Start exchange rate auto-update (every 1 min)
 exchangeRates.startAutoUpdate();
 
-// 🎰 Start Crash Game (24/7)
-const crashGame = new CrashGameService(wss);
-console.log('🎰 Crash Game started (24/7)');
+// 🎰 Start Crash Game (24/7) - с подключением к БД
+const crashGame = new CrashGameService(wss, db);
+console.log('🎰 Crash Game started (24/7) with DB integration');
 
-// WebSocket connections
+// 🔐 WebSocket connections с аутентификацией
 wss.on('connection', (ws) => {
     console.log('✅ New WebSocket client connected');
+    
+    // 🔐 Данные авторизованного пользователя (null = не авторизован)
+    ws.telegramUser = null;
+    ws.isAuthenticated = false;
     
     // Send current gifts data
     db.getAllGifts().then(gifts => {
@@ -105,13 +110,72 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Handle Crash game messages
-function handleCrashMessage(ws, msg) {
-    const { type, oderId, amount, currency, autoCashout, nickname } = msg;
+// 🔐 Handle Crash game messages - БЕЗОПАСНАЯ ВЕРСИЯ
+async function handleCrashMessage(ws, msg) {
+    const { type, initData, amount, currency, autoCashout } = msg;
     
     switch (type) {
+        // 🔐 Аутентификация WebSocket
+        case 'auth':
+            if (!initData) {
+                ws.send(JSON.stringify({ type: 'auth_result', success: false, error: 'No initData' }));
+                return;
+            }
+            
+            const userData = verifyTelegramWebAppData(initData);
+            if (!userData) {
+                ws.send(JSON.stringify({ type: 'auth_result', success: false, error: 'Invalid initData' }));
+                return;
+            }
+            
+            // 🔐 Сохраняем данные пользователя в WebSocket соединении
+            ws.telegramUser = userData;
+            ws.isAuthenticated = true;
+            
+            // Создаём/обновляем пользователя в БД
+            await db.getOrCreateUser(userData.id, {
+                username: userData.username,
+                first_name: userData.first_name,
+                last_name: userData.last_name
+            });
+            
+            // Получаем баланс
+            const balance = await db.getFullBalance(userData.id);
+            
+            // Проверяем есть ли активная ставка
+            const activeBet = crashGame.getUserBet(userData.id);
+            
+            console.log(`🔐 WebSocket authenticated: ${userData.username || userData.id}`);
+            
+            ws.send(JSON.stringify({ 
+                type: 'auth_result', 
+                success: true,
+                user: {
+                    id: userData.id,
+                    username: userData.username,
+                    first_name: userData.first_name
+                },
+                balance,
+                hasBet: !!activeBet,
+                betAmount: activeBet?.amount || 0
+            }));
+            break;
+            
         case 'crash_bet':
-            const betResult = crashGame.placeBet(oderId, amount, currency, autoCashout, nickname);
+            // 🔐 Проверяем аутентификацию
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'crash_bet_result', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const betResult = await crashGame.placeBet(
+                ws.telegramUser.id,
+                amount,
+                currency,
+                autoCashout,
+                ws.telegramUser.username || ws.telegramUser.first_name || 'Игрок'
+            );
+            
             ws.send(JSON.stringify({
                 type: 'crash_bet_result',
                 ...betResult
@@ -119,7 +183,13 @@ function handleCrashMessage(ws, msg) {
             break;
             
         case 'crash_cashout':
-            const cashoutResult = crashGame.cashout(oderId);
+            // 🔐 Проверяем аутентификацию
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'crash_cashout_result', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const cashoutResult = await crashGame.cashout(ws.telegramUser.id);
             ws.send(JSON.stringify({
                 type: 'crash_cashout_result',
                 ...cashoutResult
@@ -127,7 +197,13 @@ function handleCrashMessage(ws, msg) {
             break;
             
         case 'crash_cancel':
-            const cancelResult = crashGame.cancelBet(oderId);
+            // 🔐 Проверяем аутентификацию
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'crash_cancel_result', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const cancelResult = await crashGame.cancelBet(ws.telegramUser.id);
             ws.send(JSON.stringify({
                 type: 'crash_cancel_result',
                 ...cancelResult
@@ -138,6 +214,20 @@ function handleCrashMessage(ws, msg) {
             ws.send(JSON.stringify({
                 type: 'crash_state',
                 data: crashGame.getState()
+            }));
+            break;
+            
+        case 'get_balance':
+            // 🔐 Проверяем аутентификацию
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'balance_update', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const currentBalance = await db.getFullBalance(ws.telegramUser.id);
+            ws.send(JSON.stringify({
+                type: 'balance_update',
+                balance: currentBalance
             }));
             break;
     }
