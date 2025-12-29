@@ -471,58 +471,65 @@ async function loadFlyingGifts() {
     const container = document.getElementById('flyingGiftsContainer');
     if (!container) return;
     
-    try {
-        // Fetch gifts from API
-        const response = await fetch(`${API_BASE}/api/gifts?limit=15`);
-        const data = await response.json();
-        
-        if (!data.success || !data.data?.length) {
-            console.log('⚠️ No gifts for flying animation');
-            return;
+    // Use local gift images directly (1.png to 160.png)
+    const giftCount = 15; // Number of flying gifts
+    const totalGifts = 160; // Total available gift images
+    
+    // Wait for container to have dimensions
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const containerWidth = container.offsetWidth || 300;
+    const containerHeight = container.offsetHeight || 250;
+    
+    // Generate random gift IDs
+    const usedIds = new Set();
+    const gifts = [];
+    
+    while (gifts.length < giftCount && gifts.length < totalGifts) {
+        const id = Math.floor(Math.random() * totalGifts) + 1;
+        if (!usedIds.has(id)) {
+            usedIds.add(id);
+            gifts.push(id);
         }
-        
-        const gifts = data.data.slice(0, 15); // Max 15 gifts
-        const containerWidth = container.offsetWidth;
-        const containerHeight = container.offsetHeight;
-        
-        gifts.forEach((gift, index) => {
-            const giftEl = document.createElement('div');
-            giftEl.className = 'flying-gift';
-            
-            // Random position
-            const x = Math.random() * (containerWidth - 60);
-            const y = Math.random() * (containerHeight - 60);
-            
-            giftEl.style.left = `${x}px`;
-            giftEl.style.top = `${y}px`;
-            
-            // Random animation delay for variety
-            giftEl.style.animationDelay = `${index * 0.5}s`;
-            giftEl.style.animationDuration = `${6 + Math.random() * 4}s`;
-            
-            // Random size variation
-            const scale = 0.8 + Math.random() * 0.4;
-            giftEl.style.width = `${50 * scale}px`;
-            giftEl.style.height = `${50 * scale}px`;
-            
-            const img = document.createElement('img');
-            img.src = gift.imageUrl || gift.image_url;
-            img.alt = gift.name || 'Gift';
-            img.loading = 'lazy';
-            
-            // Handle image error
-            img.onerror = () => {
-                giftEl.remove();
-            };
-            
-            giftEl.appendChild(img);
-            container.appendChild(giftEl);
-        });
-        
-        console.log(`🎁 Loaded ${gifts.length} flying gifts`);
-    } catch (error) {
-        console.error('❌ Failed to load flying gifts:', error);
     }
+    
+    gifts.forEach((giftId, index) => {
+        const giftEl = document.createElement('div');
+        giftEl.className = 'flying-gift';
+        
+        // Random position
+        const x = Math.random() * Math.max(containerWidth - 60, 50);
+        const y = Math.random() * Math.max(containerHeight - 60, 50);
+        
+        giftEl.style.left = `${x}px`;
+        giftEl.style.top = `${y}px`;
+        
+        // Random animation delay for variety
+        giftEl.style.animationDelay = `${index * 0.3}s`;
+        giftEl.style.animationDuration = `${5 + Math.random() * 5}s`;
+        
+        // Random size variation
+        const scale = 0.7 + Math.random() * 0.5;
+        giftEl.style.width = `${55 * scale}px`;
+        giftEl.style.height = `${55 * scale}px`;
+        
+        const img = document.createElement('img');
+        img.src = `assets/gifts/${giftId}.png`;
+        img.alt = `Gift ${giftId}`;
+        img.loading = 'eager';
+        
+        // Handle image error - try another random gift
+        img.onerror = () => {
+            const fallbackId = Math.floor(Math.random() * 50) + 1;
+            img.src = `assets/gifts/${fallbackId}.png`;
+            img.onerror = () => giftEl.remove();
+        };
+        
+        giftEl.appendChild(img);
+        container.appendChild(giftEl);
+    });
+    
+    console.log(`🎁 Loaded ${gifts.length} flying gifts`);
 }
 
 // 🚀 Start app
