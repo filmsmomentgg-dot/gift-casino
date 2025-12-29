@@ -493,6 +493,13 @@
         if (icon) {
             icon.src = window.state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
         }
+        
+        // Update revealed gem icons in grid
+        const gemIcon = window.state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
+        document.querySelectorAll('.mines-cell.revealed.gem img').forEach(img => {
+            img.src = gemIcon;
+        });
+        
         updateMultiplierPreview();
     }
     

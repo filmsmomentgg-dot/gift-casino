@@ -190,6 +190,7 @@ function setupEventListeners() {
                 state.currentCurrency = currency;
                 updateBalanceDisplay();
                 updateCrashCurrency();
+                updateMinesCurrencyLocal();
             }
             elements.currencyMenu?.classList.remove('show');
         });
@@ -451,6 +452,14 @@ function updateCrashCurrency() {
     const crashBetIcon = document.getElementById('crashBetIcon');
     if (crashBetIcon) {
         crashBetIcon.src = state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
+    }
+}
+
+// 🔄 Update mines currency
+function updateMinesCurrencyLocal() {
+    // Call mines.js function which updates bet icon and revealed cells
+    if (typeof window.updateMinesCurrency === 'function') {
+        window.updateMinesCurrency();
     }
 }
 
