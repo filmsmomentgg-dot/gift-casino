@@ -37,12 +37,16 @@
     
     // Telegram
     const tg = window.Telegram?.WebApp;
+    // Флаг инициализации
+    let isInitialized = false;
     
     // ==========================================
     // 🚀 ИНИЦИАЛИЗАЦИЯ
     // ==========================================
     
     function initMines() {
+        console.log('💣 initMines called, initialized:', isInitialized);
+        
         minesElements = {
             section: document.getElementById('minesSection'),
             grid: document.getElementById('minesGrid'),
@@ -56,28 +60,39 @@
         };
         
         if (!minesElements.section) {
-            console.log('⏳ Mines section not found');
+            console.log('❌ Mines section not found');
             return;
         }
         
-        // Создаём сетку 5x5
-        createGrid();
+        if (!minesElements.grid) {
+            console.log('❌ Mines grid not found');
+            return;
+        }
         
-        // Генерируем client seed
-        minesState.clientSeed = generateClientSeed();
+        // Создаём сетку 5x5 только если она пустая
+        if (minesElements.grid.children.length === 0) {
+            createGrid();
+        }
         
-        // Обработчики
-        setupEventListeners();
-        
-        // Регистрируем обработчик сообщений
-        window._minesMsgHandler = handleMinesMessage;
+        if (!isInitialized) {
+            // Генерируем client seed
+            minesState.clientSeed = generateClientSeed();
+            
+            // Обработчики
+            setupEventListeners();
+            
+            // Регистрируем обработчик сообщений
+            window._minesMsgHandler = handleMinesMessage;
+            
+            isInitialized = true;
+        }
         
         // Запрашиваем состояние игры
         setTimeout(() => {
             if (window.liveWs && window.liveWs.readyState === 1) {
                 window.liveWs.send(JSON.stringify({ type: 'mines_get_game' }));
             }
-        }, 1000);
+        }, 500);
         
         console.log('💣 Mines game initialized');
     }
@@ -399,7 +414,9 @@
             cell.innerHTML = '💣';
         } else {
             cell.classList.add('gem');
-            cell.innerHTML = '💎';
+            // Показываем TON или Stars в зависимости от валюты
+            const icon = window.state?.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
+            cell.innerHTML = `<img src="${icon}" class="mines-gem-icon" alt="">`;
         }
     }
     
