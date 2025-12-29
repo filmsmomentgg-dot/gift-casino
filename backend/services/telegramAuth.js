@@ -13,8 +13,33 @@ const BOT_TOKEN = process.env.BOT_TOKEN || '';
  * @returns {object|null} - данные пользователя или null если невалидно
  */
 export function verifyTelegramWebAppData(initData) {
-    if (!initData || !BOT_TOKEN) {
-        console.warn('⚠️ No initData or BOT_TOKEN provided');
+    if (!initData) {
+        console.warn('⚠️ No initData provided');
+        return null;
+    }
+    
+    // 🔧 Если BOT_TOKEN не установлен - извлекаем данные без проверки подписи
+    // ВНИМАНИЕ: Это небезопасно для продакшена! Установите BOT_TOKEN!
+    if (!BOT_TOKEN) {
+        console.warn('⚠️ BOT_TOKEN not set - extracting user without signature verification!');
+        try {
+            const urlParams = new URLSearchParams(initData);
+            const userStr = urlParams.get('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                return {
+                    id: user.id,
+                    firstName: user.first_name,
+                    lastName: user.last_name || '',
+                    username: user.username || '',
+                    languageCode: user.language_code || 'en',
+                    isPremium: user.is_premium || false,
+                    authDate: parseInt(urlParams.get('auth_date') || '0')
+                };
+            }
+        } catch (e) {
+            console.error('❌ Error parsing user without BOT_TOKEN:', e);
+        }
         return null;
     }
 
