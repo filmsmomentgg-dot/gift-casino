@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gift Casino - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="styles.css?v=37">
+    <link rel="stylesheet" href="styles.css?v=38">
     <script src="secureApi.js?v=3"></script>
-    <script src="script.js?v=64" defer></script>
+    <script src="script.js?v=65" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -114,6 +114,33 @@
                         <label>Ставка</label>
                         <div class="bet-input-wrapper">
                             <img src="TON.png" alt="TON" class="bet-currency-icon" id="crashBetIcon">
+                            <input type="number" id="crashBetAmount" value="0.10" min="0.1" step="0.1">
+                            <div class="bet-quick-btns">
+                                <button class="bet-quick" data-mult="0.5">½</button>
+                                <button class="bet-quick" data-mult="2">2x</button>
+                                <button class="bet-quick" data-action="max">MAX</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="crash-auto-cashout">
+                        <div class="auto-cashout-header">
+                            <label class="auto-cashout-toggle">
+                                <input type="checkbox" id="autoCashoutEnabled">
+                                <span class="toggle-checkmark"></span>
+                            </label>
+                            <span class="auto-cashout-label">Авто-вывод</span>
+                        </div>
+                        <div class="auto-cashout-wrapper">
+                            <input type="number" id="autoCashout" value="2.00" min="1.01" step="0.01">
+                            <span class="auto-cashout-x">x</span>
+                        </div>
+                    </div>
+                    
+                    <button class="crash-btn" id="crashBtn">Ставка</button>
+                </div>
+            </div>
+        </section>
 
         <!-- 💣 Mines Game Section -->
         <section class="mines-section" id="minesSection" style="display: none;">
@@ -161,7 +188,7 @@
                         <span class="stat-value" id="minesMultiplier">1.00x</span>
                     </div>
                     <div class="mines-stat">
-                        <span class="stat-label">💎 Алмазов</span>
+                        <span class="stat-label">💎 Найдено</span>
                         <span class="stat-value" id="minesGemsCount">0</span>
                     </div>
                     <div class="mines-stat">
@@ -180,35 +207,8 @@
                 </div>
             </div>
         </section>
-                            <input type="number" id="crashBetAmount" value="0.10" min="0.1" step="0.1">
-                            <div class="bet-quick-btns">
-                                <button class="bet-quick" data-mult="0.5">½</button>
-                                <button class="bet-quick" data-mult="2">2x</button>
-                                <button class="bet-quick" data-action="max">MAX</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="crash-auto-cashout">
-                        <div class="auto-cashout-header">
-                            <label class="auto-cashout-toggle">
-                                <input type="checkbox" id="autoCashoutEnabled">
-                                <span class="toggle-checkmark"></span>
-                            </label>
-                            <span class="auto-cashout-label">Авто-вывод</span>
-                        </div>
-                        <div class="auto-cashout-wrapper">
-                            <input type="number" id="autoCashout" value="2.00" min="1.01" step="0.01">
-                            <span class="auto-cashout-x">x</span>
-                        </div>
-                    </div>
-                    
-                    <button class="crash-btn" id="crashBtn">Ставка</button>
-                </div>
-            </div>
-        </section>
 
-        <!--  Inventory Modal -->
+        <!-- 🎒 Inventory Modal -->
         <div class="inventory-modal" id="inventoryModal">
             <div class="inventory-overlay" id="inventoryOverlay"></div>
             <div class="inventory-content">
@@ -217,7 +217,7 @@
                 <div class="inventory-empty" id="inventoryEmpty">
                     <span class="empty-icon">📦</span>
                     <span class="empty-text">Инвентарь пуст</span>
-                    <span class="empty-hint">Играйте в Краш чтобы выиграть!</span>
+                    <span class="empty-hint">Играйте чтобы выиграть!</span>
                 </div>
                 <div class="inventory-items" id="inventoryItems">
                     <!-- Items will be populated by JS -->
@@ -252,7 +252,7 @@
     </div>
 
     <script src="crash.js?v=57"></script>
-    <script src="mines.js?v=2"></script>
+    <script src="mines.js?v=3"></script>
     <script src="liveUpdates.js?v=54" type="module"></script>
 </body>
 </html>
