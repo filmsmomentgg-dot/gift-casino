@@ -305,6 +305,8 @@ function handleCrashServerMessage(msg) {
             
         case 'crash_cashout_result':
             console.log('💰 Cashout result:', msg);
+            cashoutInProgress = false; // Сбрасываем флаг
+            
             if (msg.success) {
                 // 🔐 Обновляем баланс ТОЛЬКО ИЗ СЕРВЕРНЫХ ДАННЫХ
                 if (msg.balance) {
@@ -449,9 +451,9 @@ function updateCashoutButton() {
     if (!crashState.hasBet || !crashElements.btn) return;
     
     const potentialWin = crashState.betAmount * crashState.multiplier;
-    const currencyIcon = window.state.currentCurrency === 'ton' ? '💎' : '⭐';
+    const currencyIcon = window.state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
     
-    crashElements.btn.innerHTML = `Забрать ${potentialWin.toFixed(2)} ${currencyIcon}`;
+    crashElements.btn.innerHTML = `Забрать ${potentialWin.toFixed(2)} <img src="${currencyIcon}" class="btn-currency-icon" alt="">`;
     crashElements.btn.className = 'crash-btn cashout';
 }
 
@@ -574,8 +576,16 @@ function placeBet() {
 }
 
 // 🔐 Забрать выигрыш - БЕЗОПАСНАЯ ВЕРСИЯ
+let cashoutInProgress = false; // Защита от двойного клика
+
 function cashout() {
-    console.log('💰 Cashout called, hasBet:', crashState.hasBet, 'phase:', crashState.phase);
+    console.log('💰 Cashout called, hasBet:', crashState.hasBet, 'phase:', crashState.phase, 'inProgress:', cashoutInProgress);
+    
+    // Защита от двойного клика
+    if (cashoutInProgress) {
+        console.log('❌ Cashout already in progress');
+        return;
+    }
     
     if (!crashState.isAuthenticated) {
         showNotification('Ошибка авторизации', 'error');
@@ -593,13 +603,19 @@ function cashout() {
     
     console.log('✅ Sending cashout request');
     if (window.liveWs && window.liveWs.readyState === 1) {
+        cashoutInProgress = true;
+        
         window.liveWs.send(JSON.stringify({
             type: 'crash_cashout'
             // 🔐 НЕ отправляем orderId - сервер знает по WebSocket сессии
         }));
         console.log('✅ Cashout request sent');
+        
+        // Сбрасываем флаг через 2 секунды если не получили ответ
+        setTimeout(() => { cashoutInProgress = false; }, 2000);
     } else {
         console.log('❌ WebSocket not connected');
+        showNotification('Нет соединения', 'error');
     }
 }
 

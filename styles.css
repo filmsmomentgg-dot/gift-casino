@@ -2754,6 +2754,15 @@ body {
     pointer-events: auto;
 }
 
+/* Иконка валюты в кнопке */
+.btn-currency-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-left: 4px;
+    display: inline-block;
+}
+
 /* ==========================================
    🎰 SLOTS GAME STYLES
    ========================================== */
