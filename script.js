@@ -473,7 +473,7 @@ async function loadFlyingGifts() {
     
     try {
         // Fetch gifts from API
-        const response = await fetch('/api/gifts?limit=15');
+        const response = await fetch(`${API_BASE}/api/gifts?limit=15`);
         const data = await response.json();
         
         if (!data.success || !data.data?.length) {

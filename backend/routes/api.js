@@ -1,15 +1,54 @@
 import { exchangeRates } from '../services/exchangeRates.js';
 
+// Gift collection image URLs from Fragment CDN
+const COLLECTION_IMAGES = {
+    'plushpepe': 'https://nft.fragment.com/gift/plushpepe.webp',
+    'heartlocket': 'https://nft.fragment.com/gift/heartlocket.webp',
+    'bdaycandle': 'https://nft.fragment.com/gift/bdaycandle.webp',
+    'berrybox': 'https://nft.fragment.com/gift/berrybox.webp',
+    'candycane': 'https://nft.fragment.com/gift/candycane.webp',
+    'signetring': 'https://nft.fragment.com/gift/signetring.webp',
+    'vintagetv': 'https://nft.fragment.com/gift/vintagetv.webp',
+    'homemadecake': 'https://nft.fragment.com/gift/homemadecake.webp',
+    'lovepot': 'https://nft.fragment.com/gift/lovepot.webp',
+    'starface': 'https://nft.fragment.com/gift/starface.webp'
+};
+
+// Get image URL for a gift
+function getGiftImageUrl(gift) {
+    if (gift.image_path) return gift.image_path;
+    if (gift.image_url) return gift.image_url;
+    
+    const collection = gift.collection?.toLowerCase();
+    if (collection && COLLECTION_IMAGES[collection]) {
+        return COLLECTION_IMAGES[collection];
+    }
+    
+    // Fallback to Fragment CDN pattern
+    if (collection) {
+        return `https://nft.fragment.com/gift/${collection}.webp`;
+    }
+    
+    return null;
+}
+
 export function initRoutes(app, db, imageLoader, giftSync) {
     
     // Get all gifts
     app.get('/api/gifts', async (req, res) => {
         try {
             const gifts = await db.getAllGifts();
+            
+            // Add imageUrl to each gift
+            const giftsWithImages = gifts.map(gift => ({
+                ...gift,
+                imageUrl: getGiftImageUrl(gift)
+            }));
+            
             res.json({
                 success: true,
-                data: gifts,
-                count: gifts.length
+                data: giftsWithImages,
+                count: giftsWithImages.length
             });
         } catch (error) {
             res.status(500).json({
