@@ -475,12 +475,6 @@ async function loadFlyingGifts() {
     const giftCount = 15; // Number of flying gifts
     const totalGifts = 160; // Total available gift images
     
-    // Wait for container to have dimensions
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    const containerWidth = container.offsetWidth || 300;
-    const containerHeight = container.offsetHeight || 250;
-    
     // Generate random gift IDs
     const usedIds = new Set();
     const gifts = [];
@@ -497,12 +491,14 @@ async function loadFlyingGifts() {
         const giftEl = document.createElement('div');
         giftEl.className = 'flying-gift';
         
-        // Random position
-        const x = Math.random() * Math.max(containerWidth - 60, 50);
-        const y = Math.random() * Math.max(containerHeight - 60, 50);
+        // Random position using percentages (centered distribution)
+        // X: 5% to 85% (leaving margin for gift size)
+        // Y: 5% to 75%
+        const x = 5 + Math.random() * 80;
+        const y = 5 + Math.random() * 70;
         
-        giftEl.style.left = `${x}px`;
-        giftEl.style.top = `${y}px`;
+        giftEl.style.left = `${x}%`;
+        giftEl.style.top = `${y}%`;
         
         // Random animation delay for variety
         giftEl.style.animationDelay = `${index * 0.3}s`;
