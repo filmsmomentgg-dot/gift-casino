@@ -68,6 +68,9 @@ async function initApp() {
     updateBalanceDisplay();
     updateInventoryBadge();
     
+    // Load flying gifts
+    loadFlyingGifts();
+    
     console.log('✅ App initialized!');
 }
 
@@ -460,6 +463,65 @@ function updateMinesCurrencyLocal() {
     // Call mines.js function which updates bet icon and revealed cells
     if (typeof window.updateMinesCurrency === 'function') {
         window.updateMinesCurrency();
+    }
+}
+
+// 🎁 Load and display flying gifts
+async function loadFlyingGifts() {
+    const container = document.getElementById('flyingGiftsContainer');
+    if (!container) return;
+    
+    try {
+        // Fetch gifts from API
+        const response = await fetch('/api/gifts?limit=15');
+        const data = await response.json();
+        
+        if (!data.success || !data.data?.length) {
+            console.log('⚠️ No gifts for flying animation');
+            return;
+        }
+        
+        const gifts = data.data.slice(0, 15); // Max 15 gifts
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        
+        gifts.forEach((gift, index) => {
+            const giftEl = document.createElement('div');
+            giftEl.className = 'flying-gift';
+            
+            // Random position
+            const x = Math.random() * (containerWidth - 60);
+            const y = Math.random() * (containerHeight - 60);
+            
+            giftEl.style.left = `${x}px`;
+            giftEl.style.top = `${y}px`;
+            
+            // Random animation delay for variety
+            giftEl.style.animationDelay = `${index * 0.5}s`;
+            giftEl.style.animationDuration = `${6 + Math.random() * 4}s`;
+            
+            // Random size variation
+            const scale = 0.8 + Math.random() * 0.4;
+            giftEl.style.width = `${50 * scale}px`;
+            giftEl.style.height = `${50 * scale}px`;
+            
+            const img = document.createElement('img');
+            img.src = gift.imageUrl || gift.image_url;
+            img.alt = gift.name || 'Gift';
+            img.loading = 'lazy';
+            
+            // Handle image error
+            img.onerror = () => {
+                giftEl.remove();
+            };
+            
+            giftEl.appendChild(img);
+            container.appendChild(giftEl);
+        });
+        
+        console.log(`🎁 Loaded ${gifts.length} flying gifts`);
+    } catch (error) {
+        console.error('❌ Failed to load flying gifts:', error);
     }
 }
 

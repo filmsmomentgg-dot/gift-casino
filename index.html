@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles.css?v=38">
     <script src="secureApi.js?v=3"></script>
-    <script src="script.js?v=66" defer></script>
+    <script src="script.js?v=67" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -60,36 +60,44 @@
 
         <!-- 📱 Main Content (Home Tab) -->
         <div class="main-content" id="mainContent">
-            <!-- 🎯 Crash Game Button (Large) -->
-            <div class="crash-game-wrapper crash-main">
-                <button class="crash-game-btn crash-game-btn-large" id="crashGameBtn">
-                    <div class="crash-btn-content">
-                        <div class="crash-icon-wrapper">
-                            <img src="stars.png" alt="Star" class="crash-star-icon">
-                            <div class="crash-glow"></div>
-                        </div>
-                        <div class="crash-btn-text">
-                            <span class="crash-title">🚀 КРАШ</span>
-                            <span class="crash-subtitle">Умножай свой баланс!</span>
-                        </div>
-                    </div>
-                </button>
+            <!-- � Flying Gifts Animation -->
+            <div class="flying-gifts-container" id="flyingGiftsContainer">
+                <!-- Gifts will be added by JS -->
             </div>
             
-            <!-- 💣 Mines Game Button -->
-            <div class="crash-game-wrapper mines-main">
-                <button class="crash-game-btn mines-game-btn" id="minesGameBtn">
-                    <div class="crash-btn-content">
-                        <div class="crash-icon-wrapper">
-                            <span class="mines-icon">💣</span>
-                            <div class="crash-glow mines-glow"></div>
+            <!-- 🎮 Game Buttons (Bottom) -->
+            <div class="game-buttons-container">
+                <!-- 🎯 Crash Game Button (Large) -->
+                <div class="crash-game-wrapper crash-main">
+                    <button class="crash-game-btn crash-game-btn-large" id="crashGameBtn">
+                        <div class="crash-btn-content">
+                            <div class="crash-icon-wrapper">
+                                <img src="stars.png" alt="Star" class="crash-star-icon">
+                                <div class="crash-glow"></div>
+                            </div>
+                            <div class="crash-btn-text">
+                                <span class="crash-title">🚀 КРАШ</span>
+                                <span class="crash-subtitle">Умножай свой баланс!</span>
+                            </div>
                         </div>
-                        <div class="crash-btn-text">
-                            <span class="crash-title">💎 MINES</span>
-                            <span class="crash-subtitle">Найди все алмазы!</span>
+                    </button>
+                </div>
+                
+                <!-- 💣 Mines Game Button -->
+                <div class="crash-game-wrapper mines-main">
+                    <button class="crash-game-btn mines-game-btn" id="minesGameBtn">
+                        <div class="crash-btn-content">
+                            <div class="crash-icon-wrapper">
+                                <img src="TON.png" alt="TON" class="crash-star-icon mines-icon-img">
+                                <img src="stars.png" alt="Stars" class="crash-star-icon mines-icon-img mines-star">
+                            </div>
+                            <div class="crash-btn-text">
+                                <span class="crash-title">💎 MINES</span>
+                                <span class="crash-subtitle">Найди все алмазы!</span>
+                            </div>
                         </div>
-                    </div>
-                </button>
+                    </button>
+                </div>
             </div>
         </div>
 
