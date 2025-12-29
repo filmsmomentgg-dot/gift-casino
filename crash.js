@@ -715,7 +715,8 @@ function drawBgImage(ctx, width, height) {
     ctx.save();
     ctx.globalAlpha = crashState.bgImageOpacity;
     
-    const imgSize = Math.min(width, height) * 0.5;
+    // Сохраняем пропорции картинки
+    const imgSize = height * 0.6; // Размер относительно высоты для правильных пропорций
     const x = (width - imgSize) / 2;
     const y = (height - imgSize) / 2;
     

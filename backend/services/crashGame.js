@@ -220,7 +220,7 @@ export class CrashGameService {
             }
             
             // 🔐 СПИСЫВАЕМ БАЛАНС НА СЕРВЕРЕ
-            await this.db.updateBalance(telegramId, currency, -amount);
+            await this.db.updateBalance(telegramId, -amount, currency);
             
             // Генерируем Order ID на СЕРВЕРЕ
             const oderId = this.generateOrderId();
@@ -279,7 +279,7 @@ export class CrashGameService {
         
         // 🔐 НАЧИСЛЯЕМ ВЫИГРЫШ НА СЕРВЕРЕ
         try {
-            await this.db.updateBalance(telegramId, bet.currency, winAmount);
+            await this.db.updateBalance(telegramId, winAmount, bet.currency);
             
             this.state.bets.delete(oderId);
             this.userBets.delete(telegramId);
@@ -331,7 +331,7 @@ export class CrashGameService {
         
         // 🔐 ВОЗВРАЩАЕМ ДЕНЬГИ НА СЕРВЕРЕ
         try {
-            await this.db.updateBalance(telegramId, bet.currency, bet.amount);
+            await this.db.updateBalance(telegramId, bet.amount, bet.currency);
             
             this.state.bets.delete(oderId);
             this.userBets.delete(telegramId);
