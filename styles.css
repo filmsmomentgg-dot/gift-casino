@@ -3086,6 +3086,293 @@ body {
     }
 }
 
+/* ==========================================
+   💣 MINES GAME STYLES
+   ========================================== */
+
+.mines-section {
+    padding: 16px;
+    min-height: calc(100vh - 160px);
+}
+
+.mines-container {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Кнопка на главной */
+.mines-game-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%) !important;
+}
+
+.mines-icon {
+    font-size: 32px;
+}
+
+.mines-glow {
+    background: radial-gradient(circle, rgba(255, 107, 107, 0.6) 0%, transparent 70%) !important;
+}
+
+/* Панель управления */
+.mines-controls {
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--glass-border);
+}
+
+.mines-bet-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mines-bet-input {
+    flex: 1;
+}
+
+.mines-bet-input label,
+.mines-count-select label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.mines-bet-input .bet-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.mines-bet-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    outline: none;
+}
+
+.mines-count-select {
+    width: 100px;
+}
+
+.mines-count-select select {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+}
+
+.mines-quick-bets {
+    display: flex;
+    gap: 8px;
+}
+
+.mines-bet-quick {
+    flex: 1;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mines-bet-quick:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+/* Игровое поле 5x5 */
+.mines-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+}
+
+.mines-cell {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #2a2a4a 0%, #1a1a3a 100%);
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--glass-border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.mines-cell:hover:not(.revealed) {
+    transform: scale(1.05);
+    border-color: var(--accent-neon-purple);
+    box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+}
+
+.mines-cell:active:not(.revealed) {
+    transform: scale(0.95);
+}
+
+.mines-cell.revealed {
+    cursor: default;
+    transform: none;
+}
+
+.mines-cell.gem {
+    background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+    border-color: #00ff88;
+    animation: gemReveal 0.3s ease;
+}
+
+.mines-cell.mine {
+    background: linear-gradient(135deg, #ff4444 0%, #ff6b6b 100%);
+    border-color: #ff4444;
+    animation: mineReveal 0.3s ease;
+}
+
+.mines-cell.hidden-mine {
+    opacity: 0.5;
+}
+
+@keyframes gemReveal {
+    0% { transform: scale(0) rotate(-180deg); }
+    50% { transform: scale(1.2) rotate(0deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes mineReveal {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* Статистика */
+.mines-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.mines-stat {
+    flex: 1;
+    background: var(--glass-bg);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--glass-border);
+}
+
+.mines-stat .stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.mines-stat .stat-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-neon-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Главная кнопка */
+.mines-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    border: none;
+    border-radius: var(--radius-md);
+    color: #000;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.mines-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 255, 136, 0.4);
+}
+
+.mines-btn:active {
+    transform: translateY(0);
+}
+
+.mines-btn.cashout {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    animation: minesCashoutPulse 0.5s infinite;
+}
+
+.mines-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes minesCashoutPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+}
+
+.mines-btn .btn-currency-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+/* Provably Fair */
+.mines-provably-fair {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+}
+
+.mines-provably-fair .pf-label {
+    color: var(--text-muted);
+}
+
+.mines-provably-fair .pf-value {
+    color: var(--accent-neon-blue);
+    font-family: monospace;
+    word-break: break-all;
+}
+
 /* Кнопка слотов в главном меню */
 .slots-btn {
     background: linear-gradient(135deg, #ff6b00 0%, #ffd700 100%) !important;

@@ -35,6 +35,17 @@ function connectWebSocket() {
                 window._crashMsgHandler(message);
             }
         }
+        
+        // 💣 Mines game messages
+        if (message.type && (
+            message.type.startsWith('mines_') || 
+            message.type === 'auth_result' || 
+            message.type === 'balance_update'
+        )) {
+            if (typeof window._minesMsgHandler === 'function') {
+                window._minesMsgHandler(message);
+            }
+        }
     };
     
     ws.onerror = (error) => {

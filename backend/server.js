@@ -17,6 +17,7 @@ import { initRoutes } from './routes/api.js';
 import { initBotRoutes } from './routes/bot.js';
 import { initSecureRoutes } from './routes/secureApi.js';
 import { CrashGameService } from './services/crashGame.js';
+import { MinesGameService } from './services/minesGame.js';
 import { verifyTelegramWebAppData } from './services/telegramAuth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -66,6 +67,10 @@ exchangeRates.startAutoUpdate();
 // 🎰 Start Crash Game (24/7) - с подключением к БД
 const crashGame = new CrashGameService(wss, db);
 console.log('🎰 Crash Game started (24/7) with DB integration');
+
+// 💣 Start Mines Game - с подключением к БД
+const minesGame = new MinesGameService(wss, db);
+console.log('💣 Mines Game started with DB integration');
 
 // 🔐 WebSocket connections с аутентификацией
 wss.on('connection', (ws) => {
@@ -252,6 +257,82 @@ async function handleCrashMessage(ws, msg) {
             ws.send(JSON.stringify({
                 type: 'balance_update',
                 balance: currentBalance
+            }));
+            break;
+            
+        // ==========================================
+        // 💣 MINES GAME HANDLERS
+        // ==========================================
+        
+        case 'mines_start':
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'mines_start_result', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const minesStartResult = await minesGame.startGame(
+                ws.telegramUser.id,
+                msg.amount,
+                msg.currency,
+                msg.minesCount,
+                msg.clientSeed || 'default_seed_' + Date.now(),
+                ws.telegramUser.username || ws.telegramUser.firstName || 'Игрок'
+            );
+            
+            ws.send(JSON.stringify({
+                type: 'mines_start_result',
+                ...minesStartResult
+            }));
+            break;
+            
+        case 'mines_reveal':
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'mines_reveal_result', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const revealResult = await minesGame.revealCell(ws.telegramUser.id, msg.cellIndex);
+            ws.send(JSON.stringify({
+                type: 'mines_reveal_result',
+                ...revealResult
+            }));
+            break;
+            
+        case 'mines_cashout':
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'mines_cashout_result', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const minesCashoutResult = await minesGame.cashout(ws.telegramUser.id);
+            ws.send(JSON.stringify({
+                type: 'mines_cashout_result',
+                ...minesCashoutResult
+            }));
+            break;
+            
+        case 'mines_get_game':
+            if (!ws.isAuthenticated || !ws.telegramUser) {
+                ws.send(JSON.stringify({ type: 'mines_game_state', success: false, error: 'Not authenticated' }));
+                return;
+            }
+            
+            const activeGame = minesGame.getActiveGame(ws.telegramUser.id);
+            ws.send(JSON.stringify({
+                type: 'mines_game_state',
+                hasActiveGame: !!activeGame,
+                game: activeGame
+            }));
+            break;
+            
+        case 'mines_multipliers':
+            // Таблица множителей (не требует авторизации)
+            const minesCount = msg.minesCount || 3;
+            const table = minesGame.getMultiplierTable(minesCount);
+            ws.send(JSON.stringify({
+                type: 'mines_multipliers',
+                minesCount,
+                table
             }));
             break;
     }

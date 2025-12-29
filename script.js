@@ -34,8 +34,10 @@ const elements = {
     soundToggle: document.getElementById('soundToggle'),
     supportBtn: document.getElementById('supportBtn'),
     crashGameBtn: document.getElementById('crashGameBtn'),
+    minesGameBtn: document.getElementById('minesGameBtn'),
     mainContent: document.getElementById('mainContent'),
     crashSection: document.getElementById('crashSection'),
+    minesSection: document.getElementById('minesSection'),
     inventoryModal: document.getElementById('inventoryModal'),
     inventoryItems: document.getElementById('inventoryItems'),
     inventoryEmpty: document.getElementById('inventoryEmpty'),
@@ -232,6 +234,11 @@ function setupEventListeners() {
         elements.crashGameBtn.addEventListener('click', openCrashGame);
     }
     
+    // Mines game button
+    if (elements.minesGameBtn) {
+        elements.minesGameBtn.addEventListener('click', openMinesGame);
+    }
+    
     // Footer navigation
     setupFooterNavigation();
     
@@ -242,6 +249,7 @@ function setupEventListeners() {
 // 🚀 Open Crash Game
 function openCrashGame() {
     if (elements.mainContent) elements.mainContent.style.display = 'none';
+    if (elements.minesSection) elements.minesSection.style.display = 'none';
     if (elements.crashSection) elements.crashSection.style.display = 'block';
     
     // Update currency in crash
@@ -259,9 +267,31 @@ function openCrashGame() {
     }
 }
 
+// 💣 Open Mines Game
+function openMinesGame() {
+    if (elements.mainContent) elements.mainContent.style.display = 'none';
+    if (elements.crashSection) elements.crashSection.style.display = 'none';
+    if (elements.minesSection) elements.minesSection.style.display = 'block';
+    
+    // Initialize mines if needed
+    if (typeof initMines === 'function') {
+        initMines();
+    }
+    
+    // Update currency in mines
+    if (typeof updateMinesCurrency === 'function') {
+        updateMinesCurrency();
+    }
+    
+    if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('medium');
+    }
+}
+
 // 🏠 Go to home
 function goToHome() {
     if (elements.crashSection) elements.crashSection.style.display = 'none';
+    if (elements.minesSection) elements.minesSection.style.display = 'none';
     if (elements.mainContent) elements.mainContent.style.display = 'block';
     
     // Update footer

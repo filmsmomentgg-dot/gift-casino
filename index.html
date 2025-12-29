@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gift Casino - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="styles.css?v=35">
+    <link rel="stylesheet" href="styles.css?v=36">
     <script src="secureApi.js?v=3"></script>
     <script src="script.js?v=64" defer></script>
 </head>
@@ -75,6 +75,22 @@
                     </div>
                 </button>
             </div>
+            
+            <!-- 💣 Mines Game Button -->
+            <div class="crash-game-wrapper mines-main">
+                <button class="crash-game-btn mines-game-btn" id="minesGameBtn">
+                    <div class="crash-btn-content">
+                        <div class="crash-icon-wrapper">
+                            <span class="mines-icon">💣</span>
+                            <div class="crash-glow mines-glow"></div>
+                        </div>
+                        <div class="crash-btn-text">
+                            <span class="crash-title">💎 MINES</span>
+                            <span class="crash-subtitle">Найди все алмазы!</span>
+                        </div>
+                    </div>
+                </button>
+            </div>
         </div>
 
         <!-- 🚀 Crash Game Section -->
@@ -98,6 +114,72 @@
                         <label>Ставка</label>
                         <div class="bet-input-wrapper">
                             <img src="TON.png" alt="TON" class="bet-currency-icon" id="crashBetIcon">
+
+        <!-- 💣 Mines Game Section -->
+        <section class="mines-section" id="minesSection" style="display: none;">
+            <div class="mines-container">
+                <!-- Панель управления -->
+                <div class="mines-controls">
+                    <div class="mines-bet-row">
+                        <div class="mines-bet-input">
+                            <label>Ставка</label>
+                            <div class="bet-input-wrapper">
+                                <img src="TON.png" alt="TON" class="bet-currency-icon" id="minesBetIcon">
+                                <input type="number" id="minesBetInput" value="10" min="0.1" step="0.1">
+                            </div>
+                        </div>
+                        <div class="mines-count-select">
+                            <label>Мины</label>
+                            <select id="minesCountSelect">
+                                <option value="1">1</option>
+                                <option value="3" selected>3</option>
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="24">24</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mines-quick-bets">
+                        <button class="mines-bet-quick" data-mult="0.25">25%</button>
+                        <button class="mines-bet-quick" data-mult="0.5">50%</button>
+                        <button class="mines-bet-quick" data-action="max">MAX</button>
+                    </div>
+                </div>
+                
+                <!-- Игровое поле 5x5 -->
+                <div class="mines-grid" id="minesGrid">
+                    <!-- 25 клеток создаются в JS -->
+                </div>
+                
+                <!-- Статистика -->
+                <div class="mines-stats">
+                    <div class="mines-stat">
+                        <span class="stat-label">Множитель</span>
+                        <span class="stat-value" id="minesMultiplier">1.00x</span>
+                    </div>
+                    <div class="mines-stat">
+                        <span class="stat-label">💎 Алмазов</span>
+                        <span class="stat-value" id="minesGemsCount">0</span>
+                    </div>
+                    <div class="mines-stat">
+                        <span class="stat-label">Выигрыш</span>
+                        <span class="stat-value" id="minesPotentialWin">0.00</span>
+                    </div>
+                </div>
+                
+                <!-- Главная кнопка -->
+                <button class="mines-btn" id="minesBtn">Начать игру</button>
+                
+                <!-- Provably Fair info -->
+                <div class="mines-provably-fair">
+                    <span class="pf-label">🔐 Seed Hash:</span>
+                    <span class="pf-value" id="minesSeedHash">-</span>
+                </div>
+            </div>
+        </section>
                             <input type="number" id="crashBetAmount" value="0.10" min="0.1" step="0.1">
                             <div class="bet-quick-btns">
                                 <button class="bet-quick" data-mult="0.5">½</button>
@@ -170,6 +252,7 @@
     </div>
 
     <script src="crash.js?v=57"></script>
-    <script src="liveUpdates.js?v=53" type="module"></script>
+    <script src="mines.js?v=1"></script>
+    <script src="liveUpdates.js?v=54" type="module"></script>
 </body>
 </html>
