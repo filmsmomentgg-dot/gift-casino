@@ -491,11 +491,11 @@ async function loadFlyingGifts() {
         const giftEl = document.createElement('div');
         giftEl.className = 'flying-gift';
         
-        // Random position using percentages (centered distribution)
-        // X: 5% to 85% (leaving margin for gift size)
-        // Y: 5% to 75%
-        const x = 5 + Math.random() * 80;
-        const y = 5 + Math.random() * 70;
+        // Random position using percentages (full area distribution)
+        // X: 10% to 90% (full width with margins)
+        // Y: 10% to 90% (full height with margins)
+        const x = 10 + Math.random() * 80;
+        const y = 10 + Math.random() * 80;
         
         giftEl.style.left = `${x}%`;
         giftEl.style.top = `${y}%`;
