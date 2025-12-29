@@ -92,23 +92,24 @@ function initCrash() {
             if (isProcessing) return;
             isProcessing = true;
             handleCrashBtn();
-            setTimeout(() => { isProcessing = false; }, 150);
+            setTimeout(() => { isProcessing = false; }, 300); // Увеличил таймаут
         };
         
+        // Мобильные устройства
         crashBtn.addEventListener('touchend', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             lastTouchTime = Date.now();
             handleClick(e);
         }, { passive: false });
         
-        crashBtn.addEventListener('click', function(e) {
-            if (Date.now() - lastTouchTime < 300) return;
-            handleClick(e);
-        });
-        
+        // ПК - используем mousedown для мгновенного отклика
         crashBtn.addEventListener('mousedown', function(e) {
-            if (Date.now() - lastTouchTime < 300) return;
+            if (Date.now() - lastTouchTime < 500) return; // Игнорируем если был touch
+            if (e.button !== 0) return; // Только левая кнопка
+            e.preventDefault();
             crashBtn.style.transform = 'scale(0.98)';
+            handleClick(e);
         });
         
         crashBtn.addEventListener('mouseup', function(e) {
@@ -117,6 +118,12 @@ function initCrash() {
         
         crashBtn.addEventListener('mouseleave', function(e) {
             crashBtn.style.transform = '';
+        });
+        
+        // Отключаем стандартный click чтобы не дублировался
+        crashBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
         });
     }
     
@@ -446,14 +453,28 @@ function updateMultiplierDisplay() {
     }
 }
 
-// Кнопка "Забрать" с суммой
+// Кнопка "Забрать" с суммой - БЕЗ МОРГАНИЯ
+let lastCurrencyIcon = null; // Кешируем иконку
+
 function updateCashoutButton() {
     if (!crashState.hasBet || !crashElements.btn) return;
     
     const potentialWin = crashState.betAmount * crashState.multiplier;
     const currencyIcon = window.state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
     
-    crashElements.btn.innerHTML = `Забрать ${potentialWin.toFixed(2)} <img src="${currencyIcon}" class="btn-currency-icon" alt="">`;
+    // Проверяем есть ли уже структура кнопки cashout
+    let amountSpan = crashElements.btn.querySelector('.cashout-amount');
+    let iconImg = crashElements.btn.querySelector('.btn-currency-icon');
+    
+    // Если структуры нет или иконка изменилась - создаём заново
+    if (!amountSpan || !iconImg || lastCurrencyIcon !== currencyIcon) {
+        crashElements.btn.innerHTML = `Забрать <span class="cashout-amount">${potentialWin.toFixed(2)}</span> <img src="${currencyIcon}" class="btn-currency-icon" alt="">`;
+        lastCurrencyIcon = currencyIcon;
+    } else {
+        // Обновляем только сумму - картинка не мигает!
+        amountSpan.textContent = potentialWin.toFixed(2);
+    }
+    
     crashElements.btn.className = 'crash-btn cashout';
 }
 
