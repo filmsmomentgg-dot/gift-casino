@@ -490,8 +490,23 @@
     
     function updateMinesCurrency() {
         const icon = document.getElementById('minesBetIcon');
+        const betInput = minesElements.betInput || document.getElementById('minesBetInput');
+        
         if (icon) {
             icon.src = window.state.currentCurrency === 'ton' ? 'TON.png' : 'stars.png';
+        }
+        
+        // Update bet input defaults like in Crash
+        if (betInput) {
+            if (window.state.currentCurrency === 'ton') {
+                betInput.min = '0.1';
+                betInput.step = '0.1';
+                betInput.value = '0.10';
+            } else {
+                betInput.min = '20';
+                betInput.step = '1';
+                betInput.value = '20';
+            }
         }
         
         // Update revealed gem icons in grid
