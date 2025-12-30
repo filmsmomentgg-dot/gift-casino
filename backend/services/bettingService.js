@@ -1,5 +1,4 @@
 // 🎰 Betting Service - Парсинг ставок на спорт и киберспорт
-import fetch from 'node-fetch';
 
 class BettingService {
     constructor() {
