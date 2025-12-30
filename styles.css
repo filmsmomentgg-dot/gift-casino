@@ -2031,6 +2031,315 @@ body {
     50% { transform: scale(1.1); }
 }
 
+/* 🎰 Bets Section */
+.bets-section {
+    padding: 15px;
+    padding-bottom: 100px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #0d0d15 0%, #141428 100%);
+}
+
+.bets-container {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.bets-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: rgba(30, 30, 50, 0.6);
+    padding: 6px;
+    border-radius: 16px;
+}
+
+.bets-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.bets-tab.active {
+    background: linear-gradient(135deg, #9d4edd 0%, #7b2cbf 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
+}
+
+.bets-tab:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bets-events {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bet-event {
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.9) 0%, rgba(20, 20, 40, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.bet-event:hover {
+    border-color: rgba(157, 78, 221, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.bet-event.esport {
+    border-left: 3px solid #00d9ff;
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.event-league {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+}
+
+.event-time {
+    font-size: 11px;
+    color: #c77dff;
+    background: rgba(157, 78, 221, 0.15);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.event-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.event-teams .team {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    flex: 1;
+}
+
+.event-teams .vs {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.event-odds {
+    display: flex;
+    gap: 8px;
+}
+
+.odd-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 8px;
+    background: rgba(50, 50, 80, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.odd-btn:hover {
+    background: rgba(157, 78, 221, 0.2);
+    border-color: rgba(157, 78, 221, 0.4);
+}
+
+.odd-btn:active {
+    transform: scale(0.95);
+}
+
+.odd-btn.selected {
+    background: linear-gradient(135deg, #9d4edd 0%, #7b2cbf 100%);
+    border-color: #c77dff;
+    box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+}
+
+.odd-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.odd-btn.selected .odd-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.odd-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00d9ff;
+}
+
+.odd-btn.selected .odd-value {
+    color: white;
+}
+
+/* Bet Slip */
+.bet-slip {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 30px);
+    max-width: 450px;
+    background: linear-gradient(135deg, rgba(30, 30, 55, 0.98) 0%, rgba(20, 20, 40, 0.99) 100%);
+    border: 1px solid rgba(157, 78, 221, 0.3);
+    border-radius: 20px;
+    padding: 16px;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.bet-slip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bet-slip-header span {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+}
+
+.bet-slip-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.bet-slip-close:hover {
+    background: rgba(255, 68, 68, 0.3);
+    color: white;
+}
+
+.bet-slip-selection {
+    background: rgba(50, 50, 80, 0.4);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.bet-slip-selection .selection-match {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 4px;
+}
+
+.bet-slip-selection .selection-pick {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+}
+
+.bet-slip-selection .selection-odd {
+    font-size: 18px;
+    font-weight: 700;
+    color: #00d9ff;
+    margin-top: 4px;
+}
+
+.bet-slip-input {
+    margin-bottom: 12px;
+}
+
+.bet-slip-input label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
+}
+
+.bet-slip-potential {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(0, 217, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.bet-slip-potential span:first-child {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.bet-slip-potential .potential-win {
+    font-size: 20px;
+    font-weight: 700;
+    color: #00ff88;
+}
+
+.bet-slip-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #9d4edd 0%, #7b2cbf 100%);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.bet-slip-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(157, 78, 221, 0.4);
+}
+
+.bet-slip-btn:active {
+    transform: scale(0.98);
+}
+
 /* Onboarding Overlay */
 .onboarding-overlay {
     position: fixed;

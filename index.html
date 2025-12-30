@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gift Casino - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="styles.css?v=40">
+    <link rel="stylesheet" href="styles.css?v=41">
     <script src="secureApi.js?v=3"></script>
-    <script src="script.js?v=71" defer></script>
+    <script src="script.js?v=72" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -216,7 +216,158 @@
             </div>
         </section>
 
-        <!-- 🎒 Inventory Modal -->
+        <!-- � Bets Section -->
+        <section class="bets-section" id="betsSection" style="display: none;">
+            <div class="bets-container">
+                <!-- Tabs -->
+                <div class="bets-tabs">
+                    <button class="bets-tab active" data-type="sports">⚽ Спорт</button>
+                    <button class="bets-tab" data-type="esports">🎮 Киберспорт</button>
+                </div>
+                
+                <!-- Sports Events -->
+                <div class="bets-events" id="sportsEvents">
+                    <div class="bet-event">
+                        <div class="event-header">
+                            <span class="event-league">⚽ Премьер-Лига</span>
+                            <span class="event-time">Сегодня 19:00</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">Манчестер Сити</span>
+                            <span class="vs">vs</span>
+                            <span class="team">Ливерпуль</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="1.85"><span class="odd-label">П1</span><span class="odd-value">1.85</span></button>
+                            <button class="odd-btn" data-odd="3.50"><span class="odd-label">X</span><span class="odd-value">3.50</span></button>
+                            <button class="odd-btn" data-odd="4.20"><span class="odd-label">П2</span><span class="odd-value">4.20</span></button>
+                        </div>
+                    </div>
+                    
+                    <div class="bet-event">
+                        <div class="event-header">
+                            <span class="event-league">🏀 НБА</span>
+                            <span class="event-time">Сегодня 21:30</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">Lakers</span>
+                            <span class="vs">vs</span>
+                            <span class="team">Celtics</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="2.10"><span class="odd-label">П1</span><span class="odd-value">2.10</span></button>
+                            <button class="odd-btn" data-odd="1.75"><span class="odd-label">П2</span><span class="odd-value">1.75</span></button>
+                        </div>
+                    </div>
+                    
+                    <div class="bet-event">
+                        <div class="event-header">
+                            <span class="event-league">🎾 ATP Finals</span>
+                            <span class="event-time">Завтра 15:00</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">Синнер</span>
+                            <span class="vs">vs</span>
+                            <span class="team">Алькарас</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="1.95"><span class="odd-label">П1</span><span class="odd-value">1.95</span></button>
+                            <button class="odd-btn" data-odd="1.90"><span class="odd-label">П2</span><span class="odd-value">1.90</span></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Esports Events -->
+                <div class="bets-events" id="esportsEvents" style="display: none;">
+                    <div class="bet-event esport">
+                        <div class="event-header">
+                            <span class="event-league">🎮 CS2 Major</span>
+                            <span class="event-time">Сегодня 18:00</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">NAVI</span>
+                            <span class="vs">vs</span>
+                            <span class="team">G2 Esports</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="1.65"><span class="odd-label">П1</span><span class="odd-value">1.65</span></button>
+                            <button class="odd-btn" data-odd="2.25"><span class="odd-label">П2</span><span class="odd-value">2.25</span></button>
+                        </div>
+                    </div>
+                    
+                    <div class="bet-event esport">
+                        <div class="event-header">
+                            <span class="event-league">🎮 Dota 2 TI</span>
+                            <span class="event-time">Сегодня 20:00</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">Team Spirit</span>
+                            <span class="vs">vs</span>
+                            <span class="team">Team Liquid</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="1.55"><span class="odd-label">П1</span><span class="odd-value">1.55</span></button>
+                            <button class="odd-btn" data-odd="2.40"><span class="odd-label">П2</span><span class="odd-value">2.40</span></button>
+                        </div>
+                    </div>
+                    
+                    <div class="bet-event esport">
+                        <div class="event-header">
+                            <span class="event-league">🎮 LoL Worlds</span>
+                            <span class="event-time">Завтра 12:00</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">T1</span>
+                            <span class="vs">vs</span>
+                            <span class="team">Gen.G</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="1.80"><span class="odd-label">П1</span><span class="odd-value">1.80</span></button>
+                            <button class="odd-btn" data-odd="2.00"><span class="odd-label">П2</span><span class="odd-value">2.00</span></button>
+                        </div>
+                    </div>
+                    
+                    <div class="bet-event esport">
+                        <div class="event-header">
+                            <span class="event-league">🎮 Valorant Champions</span>
+                            <span class="event-time">Завтра 17:00</span>
+                        </div>
+                        <div class="event-teams">
+                            <span class="team">Fnatic</span>
+                            <span class="vs">vs</span>
+                            <span class="team">Sentinels</span>
+                        </div>
+                        <div class="event-odds">
+                            <button class="odd-btn" data-odd="1.70"><span class="odd-label">П1</span><span class="odd-value">1.70</span></button>
+                            <button class="odd-btn" data-odd="2.15"><span class="odd-label">П2</span><span class="odd-value">2.15</span></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bet Slip -->
+                <div class="bet-slip" id="betSlip" style="display: none;">
+                    <div class="bet-slip-header">
+                        <span>🎫 Купон</span>
+                        <button class="bet-slip-close" id="betSlipClose">✕</button>
+                    </div>
+                    <div class="bet-slip-selection" id="betSlipSelection"></div>
+                    <div class="bet-slip-input">
+                        <label>Сумма ставки</label>
+                        <div class="bet-input-wrapper">
+                            <img src="TON.png" alt="TON" class="bet-currency-icon" id="betsSlipIcon">
+                            <input type="number" id="betSlipAmount" value="10" min="1" step="1">
+                        </div>
+                    </div>
+                    <div class="bet-slip-potential">
+                        <span>Возможный выигрыш:</span>
+                        <span class="potential-win" id="betSlipPotential">0.00</span>
+                    </div>
+                    <button class="bet-slip-btn" id="placeBetBtn">Сделать ставку</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- �🎒 Inventory Modal -->
         <div class="inventory-modal" id="inventoryModal">
             <div class="inventory-overlay" id="inventoryOverlay"></div>
             <div class="inventory-content">
@@ -243,6 +394,15 @@
                     </svg>
                 </div>
                 <div class="footer-label">Главная</div>
+            </button>
+            <button class="footer-btn" data-tab="bets">
+                <div class="footer-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polygon points="12 6 14 10 18 10 15 13 16 17 12 15 8 17 9 13 6 10 10 10 12 6"/>
+                    </svg>
+                </div>
+                <div class="footer-label">Ставки</div>
             </button>
             <button class="footer-btn" id="inventoryFooterBtn" data-tab="inventory">
                 <div class="footer-icon">

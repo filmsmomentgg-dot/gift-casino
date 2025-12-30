@@ -38,6 +38,7 @@ const elements = {
     mainContent: document.getElementById('mainContent'),
     crashSection: document.getElementById('crashSection'),
     minesSection: document.getElementById('minesSection'),
+    betsSection: document.getElementById('betsSection'),
     inventoryModal: document.getElementById('inventoryModal'),
     inventoryItems: document.getElementById('inventoryItems'),
     inventoryEmpty: document.getElementById('inventoryEmpty'),
@@ -254,6 +255,7 @@ function setupEventListeners() {
 function openCrashGame() {
     if (elements.mainContent) elements.mainContent.style.display = 'none';
     if (elements.minesSection) elements.minesSection.style.display = 'none';
+    if (elements.betsSection) elements.betsSection.style.display = 'none';
     if (elements.crashSection) elements.crashSection.style.display = 'block';
     
     // Update currency in crash
@@ -275,6 +277,7 @@ function openCrashGame() {
 function openMinesGame() {
     if (elements.mainContent) elements.mainContent.style.display = 'none';
     if (elements.crashSection) elements.crashSection.style.display = 'none';
+    if (elements.betsSection) elements.betsSection.style.display = 'none';
     if (elements.minesSection) elements.minesSection.style.display = 'block';
     
     // Initialize mines if needed
@@ -296,6 +299,7 @@ function openMinesGame() {
 function goToHome() {
     if (elements.crashSection) elements.crashSection.style.display = 'none';
     if (elements.minesSection) elements.minesSection.style.display = 'none';
+    if (elements.betsSection) elements.betsSection.style.display = 'none';
     if (elements.mainContent) elements.mainContent.style.display = 'block';
     
     // Update footer
@@ -317,6 +321,8 @@ function setupFooterNavigation() {
                 goToHome();
             } else if (tab === 'inventory') {
                 openInventoryModal();
+            } else if (tab === 'bets') {
+                openBetsSection();
             }
             
             if (tg?.HapticFeedback) {
@@ -324,6 +330,171 @@ function setupFooterNavigation() {
             }
         });
     });
+}
+
+// 🎰 Bets Section
+function openBetsSection() {
+    if (elements.mainContent) elements.mainContent.style.display = 'none';
+    if (elements.crashSection) elements.crashSection.style.display = 'none';
+    if (elements.minesSection) elements.minesSection.style.display = 'none';
+    if (elements.betsSection) elements.betsSection.style.display = 'block';
+    
+    setupBetsListeners();
+}
+
+function setupBetsListeners() {
+    // Tabs switching
+    document.querySelectorAll('.bets-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.bets-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const type = tab.dataset.type;
+            const sportsEvents = document.getElementById('sportsEvents');
+            const esportsEvents = document.getElementById('esportsEvents');
+            
+            if (type === 'sports') {
+                sportsEvents.style.display = 'flex';
+                esportsEvents.style.display = 'none';
+            } else {
+                sportsEvents.style.display = 'none';
+                esportsEvents.style.display = 'flex';
+            }
+            
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        });
+    });
+    
+    // Odd buttons
+    document.querySelectorAll('.odd-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const wasSelected = btn.classList.contains('selected');
+            
+            // Remove all selections
+            document.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('selected'));
+            
+            if (!wasSelected) {
+                btn.classList.add('selected');
+                showBetSlip(btn);
+            } else {
+                hideBetSlip();
+            }
+            
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+        });
+    });
+    
+    // Bet slip close
+    const betSlipClose = document.getElementById('betSlipClose');
+    if (betSlipClose) {
+        betSlipClose.addEventListener('click', () => {
+            hideBetSlip();
+            document.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('selected'));
+        });
+    }
+    
+    // Bet amount change
+    const betSlipAmount = document.getElementById('betSlipAmount');
+    if (betSlipAmount) {
+        betSlipAmount.addEventListener('input', updatePotentialWin);
+    }
+    
+    // Place bet button
+    const placeBetBtn = document.getElementById('placeBetBtn');
+    if (placeBetBtn) {
+        placeBetBtn.addEventListener('click', placeBet);
+    }
+}
+
+let selectedBetData = null;
+
+function showBetSlip(oddBtn) {
+    const betSlip = document.getElementById('betSlip');
+    const selection = document.getElementById('betSlipSelection');
+    
+    // Get match info
+    const eventEl = oddBtn.closest('.bet-event');
+    const teams = eventEl.querySelector('.event-teams');
+    const team1 = teams.querySelectorAll('.team')[0].textContent;
+    const team2 = teams.querySelectorAll('.team')[1].textContent;
+    const oddLabel = oddBtn.querySelector('.odd-label').textContent;
+    const oddValue = oddBtn.dataset.odd;
+    
+    // Determine pick
+    let pickText = '';
+    if (oddLabel === 'П1') pickText = team1;
+    else if (oddLabel === 'П2') pickText = team2;
+    else if (oddLabel === 'X') pickText = 'Ничья';
+    
+    selectedBetData = {
+        match: `${team1} vs ${team2}`,
+        pick: pickText,
+        odd: parseFloat(oddValue)
+    };
+    
+    selection.innerHTML = `
+        <div class="selection-match">${team1} vs ${team2}</div>
+        <div class="selection-pick">${pickText} (${oddLabel})</div>
+        <div class="selection-odd">x${oddValue}</div>
+    `;
+    
+    betSlip.style.display = 'block';
+    updatePotentialWin();
+}
+
+function hideBetSlip() {
+    const betSlip = document.getElementById('betSlip');
+    if (betSlip) betSlip.style.display = 'none';
+    selectedBetData = null;
+}
+
+function updatePotentialWin() {
+    if (!selectedBetData) return;
+    
+    const amount = parseFloat(document.getElementById('betSlipAmount').value) || 0;
+    const potential = amount * selectedBetData.odd;
+    document.getElementById('betSlipPotential').textContent = potential.toFixed(2);
+}
+
+function placeBet() {
+    if (!selectedBetData) return;
+    
+    const amount = parseFloat(document.getElementById('betSlipAmount').value) || 0;
+    const currentBalance = state.currentCurrency === 'ton' ? state.balance : state.starsBalance;
+    
+    if (amount <= 0) {
+        showNotification('Введите сумму ставки', 'error');
+        return;
+    }
+    
+    if (amount > currentBalance) {
+        showNotification('Недостаточно средств', 'error');
+        return;
+    }
+    
+    // Deduct balance
+    if (state.currentCurrency === 'ton') {
+        state.balance -= amount;
+    } else {
+        state.starsBalance -= amount;
+    }
+    updateBalanceDisplay();
+    
+    // Show success
+    const potential = (amount * selectedBetData.odd).toFixed(2);
+    showNotification(`✅ Ставка принята! Возможный выигрыш: ${potential}`, 'success');
+    
+    // Reset
+    hideBetSlip();
+    document.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('selected'));
+    
+    if (tg?.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('success');
+    }
 }
 
 // 🎒 Inventory Modal
