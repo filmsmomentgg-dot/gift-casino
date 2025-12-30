@@ -5,6 +5,7 @@
  */
 
 import { authMiddleware } from '../services/telegramAuth.js';
+import { bettingService } from '../services/bettingService.js';
 
 export function initSecureRoutes(app, db) {
 
@@ -169,5 +170,102 @@ export function initSecureRoutes(app, db) {
         });
     }
 
-    console.log('✅ Secure API routes initialized (no cases)');
+    // ==================== СТАВКИ (BETTING) ====================
+
+    /**
+     * Получить все события для ставок
+     */
+    app.get('/api/betting/events', async (req, res) => {
+        try {
+            const events = await bettingService.getAllEvents();
+            res.json({
+                success: true,
+                data: events
+            });
+        } catch (error) {
+            console.error('Error getting betting events:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get events'
+            });
+        }
+    });
+
+    /**
+     * Сделать ставку
+     */
+    app.post('/api/betting/place', authMiddleware, async (req, res) => {
+        try {
+            const { eventId, pick, odd, amount, currency = 'ton', matchInfo } = req.body;
+
+            if (!eventId || !pick || !odd || !amount) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Missing required fields'
+                });
+            }
+
+            // Check balance
+            const balance = await db.getFullBalance(req.telegramUser.id);
+            const currentBalance = currency === 'ton' ? balance.ton : balance.stars;
+
+            if (amount > currentBalance) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Insufficient balance'
+                });
+            }
+
+            // Deduct balance
+            await db.updateBalance(req.telegramUser.id, -amount, currency);
+
+            // Save bet
+            const bet = await db.placeBet(req.telegramUser.id, {
+                eventId,
+                pick,
+                odd,
+                amount,
+                currency,
+                matchInfo,
+                status: 'pending',
+                potentialWin: amount * odd,
+                createdAt: new Date().toISOString()
+            });
+
+            const newBalance = await db.getFullBalance(req.telegramUser.id);
+
+            res.json({
+                success: true,
+                bet,
+                balance: newBalance
+            });
+        } catch (error) {
+            console.error('Error placing bet:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to place bet'
+            });
+        }
+    });
+
+    /**
+     * Получить мои ставки
+     */
+    app.get('/api/betting/my-bets', authMiddleware, async (req, res) => {
+        try {
+            const bets = await db.getUserBets(req.telegramUser.id);
+            res.json({
+                success: true,
+                data: bets
+            });
+        } catch (error) {
+            console.error('Error getting bets:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get bets'
+            });
+        }
+    });
+
+    console.log('✅ Secure API routes initialized (with betting)');
 }

@@ -333,13 +333,170 @@ function setupFooterNavigation() {
 }
 
 // 🎰 Bets Section
+let betsData = { sports: [], esports: [] };
+let betsListenersSetup = false;
+
 function openBetsSection() {
     if (elements.mainContent) elements.mainContent.style.display = 'none';
     if (elements.crashSection) elements.crashSection.style.display = 'none';
     if (elements.minesSection) elements.minesSection.style.display = 'none';
     if (elements.betsSection) elements.betsSection.style.display = 'block';
     
-    setupBetsListeners();
+    // Load events from server
+    loadBettingEvents();
+    
+    if (!betsListenersSetup) {
+        setupBetsListeners();
+        betsListenersSetup = true;
+    }
+}
+
+async function loadBettingEvents() {
+    try {
+        const response = await fetch(`${API_BASE}/api/betting/events`);
+        const data = await response.json();
+        
+        if (data.success) {
+            betsData = data.data;
+            renderSportsEvents(betsData.sports);
+            renderEsportsEvents(betsData.esports);
+        }
+    } catch (error) {
+        console.error('Failed to load betting events:', error);
+    }
+}
+
+function renderSportsEvents(events) {
+    const container = document.getElementById('sportsEvents');
+    if (!container || !events.length) return;
+    
+    container.innerHTML = events.map(event => `
+        <div class="bet-event" data-event-id="${event.id}">
+            <div class="event-header">
+                <span class="event-league">${event.league}</span>
+                <span class="event-time">Сегодня ${event.time}</span>
+            </div>
+            <div class="event-teams">
+                <span class="team">${event.team1}</span>
+                <span class="vs">vs</span>
+                <span class="team">${event.team2}</span>
+            </div>
+            <div class="event-odds">
+                <button class="odd-btn" data-odd="${event.odds.home}" data-pick="П1">
+                    <span class="odd-label">П1</span>
+                    <span class="odd-value">${event.odds.home}</span>
+                </button>
+                ${event.odds.draw ? `
+                <button class="odd-btn" data-odd="${event.odds.draw}" data-pick="X">
+                    <span class="odd-label">X</span>
+                    <span class="odd-value">${event.odds.draw}</span>
+                </button>
+                ` : ''}
+                <button class="odd-btn" data-odd="${event.odds.away}" data-pick="П2">
+                    <span class="odd-label">П2</span>
+                    <span class="odd-value">${event.odds.away}</span>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Re-attach odd button listeners
+    attachOddButtonListeners();
+}
+
+function renderEsportsEvents(events) {
+    const container = document.getElementById('esportsEvents');
+    if (!container || !events.length) return;
+    
+    container.innerHTML = events.map(event => `
+        <div class="bet-event esport" data-event-id="${event.id}">
+            <div class="event-header">
+                <span class="event-league">${event.league}</span>
+                <span class="event-time">Сегодня ${event.time}</span>
+            </div>
+            <div class="event-teams">
+                <span class="team">${event.team1}</span>
+                <span class="vs">vs</span>
+                <span class="team">${event.team2}</span>
+            </div>
+            <div class="event-odds">
+                <button class="odd-btn" data-odd="${event.odds.home}" data-pick="П1">
+                    <span class="odd-label">П1</span>
+                    <span class="odd-value">${event.odds.home}</span>
+                </button>
+                <button class="odd-btn" data-odd="${event.odds.away}" data-pick="П2">
+                    <span class="odd-label">П2</span>
+                    <span class="odd-value">${event.odds.away}</span>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Re-attach odd button listeners
+    attachOddButtonListeners();
+}
+
+async function loadMyBets() {
+    const container = document.getElementById('myBetsList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="bets-loading">⏳ Загрузка ставок...</div>';
+    
+    try {
+        if (!window.secureAPI) {
+            container.innerHTML = '<div class="bets-empty">Войдите через Telegram</div>';
+            return;
+        }
+        
+        const response = await window.secureAPI.request('/api/betting/my-bets');
+        
+        if (response.success && response.data.length > 0) {
+            container.innerHTML = response.data.map(bet => {
+                const statusClass = bet.status === 'won' ? 'bet-won' : 
+                                   bet.status === 'lost' ? 'bet-lost' : 'bet-pending';
+                const statusText = bet.status === 'won' ? '✅ Выигрыш' :
+                                  bet.status === 'lost' ? '❌ Проигрыш' : '⏳ Ожидание';
+                const matchInfo = bet.match_info || {};
+                
+                return `
+                    <div class="my-bet-card ${statusClass}">
+                        <div class="bet-match">${matchInfo.team1 || '???'} vs ${matchInfo.team2 || '???'}</div>
+                        <div class="bet-pick">Ставка: ${bet.pick} (x${bet.odd})</div>
+                        <div class="bet-amount">Сумма: ${bet.amount} ${bet.currency.toUpperCase()}</div>
+                        <div class="bet-potential">Выигрыш: ${bet.potential_win.toFixed(2)}</div>
+                        <div class="bet-status">${statusText}</div>
+                        <div class="bet-date">${new Date(bet.created_at).toLocaleString('ru')}</div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = '<div class="bets-empty">📭 У вас пока нет ставок</div>';
+        }
+    } catch (error) {
+        console.error('Failed to load my bets:', error);
+        container.innerHTML = '<div class="bets-empty">Ошибка загрузки</div>';
+    }
+}
+
+function attachOddButtonListeners() {
+    document.querySelectorAll('.odd-btn').forEach(btn => {
+        btn.onclick = () => {
+            const wasSelected = btn.classList.contains('selected');
+            
+            document.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('selected'));
+            
+            if (!wasSelected) {
+                btn.classList.add('selected');
+                showBetSlip(btn);
+            } else {
+                hideBetSlip();
+            }
+            
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+        };
+    });
 }
 
 function setupBetsListeners() {
@@ -352,38 +509,25 @@ function setupBetsListeners() {
             const type = tab.dataset.type;
             const sportsEvents = document.getElementById('sportsEvents');
             const esportsEvents = document.getElementById('esportsEvents');
+            const myBetsList = document.getElementById('myBetsList');
+            
+            // Hide all
+            if (sportsEvents) sportsEvents.style.display = 'none';
+            if (esportsEvents) esportsEvents.style.display = 'none';
+            if (myBetsList) myBetsList.style.display = 'none';
+            hideBetSlip();
             
             if (type === 'sports') {
-                sportsEvents.style.display = 'flex';
-                esportsEvents.style.display = 'none';
-            } else {
-                sportsEvents.style.display = 'none';
-                esportsEvents.style.display = 'flex';
+                if (sportsEvents) sportsEvents.style.display = 'flex';
+            } else if (type === 'esports') {
+                if (esportsEvents) esportsEvents.style.display = 'flex';
+            } else if (type === 'mybets') {
+                if (myBetsList) myBetsList.style.display = 'flex';
+                loadMyBets();
             }
             
             if (tg?.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('light');
-            }
-        });
-    });
-    
-    // Odd buttons
-    document.querySelectorAll('.odd-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const wasSelected = btn.classList.contains('selected');
-            
-            // Remove all selections
-            document.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('selected'));
-            
-            if (!wasSelected) {
-                btn.classList.add('selected');
-                showBetSlip(btn);
-            } else {
-                hideBetSlip();
-            }
-            
-            if (tg?.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
             }
         });
     });
@@ -418,6 +562,7 @@ function showBetSlip(oddBtn) {
     
     // Get match info
     const eventEl = oddBtn.closest('.bet-event');
+    const eventId = eventEl.dataset.eventId;
     const teams = eventEl.querySelector('.event-teams');
     const team1 = teams.querySelectorAll('.team')[0].textContent;
     const team2 = teams.querySelectorAll('.team')[1].textContent;
@@ -431,8 +576,12 @@ function showBetSlip(oddBtn) {
     else if (oddLabel === 'X') pickText = 'Ничья';
     
     selectedBetData = {
+        eventId: eventId,
+        team1: team1,
+        team2: team2,
         match: `${team1} vs ${team2}`,
-        pick: pickText,
+        pick: oddLabel,
+        pickText: pickText,
         odd: parseFloat(oddValue)
     };
     
@@ -460,7 +609,7 @@ function updatePotentialWin() {
     document.getElementById('betSlipPotential').textContent = potential.toFixed(2);
 }
 
-function placeBet() {
+async function placeBet() {
     if (!selectedBetData) return;
     
     const amount = parseFloat(document.getElementById('betSlipAmount').value) || 0;
@@ -476,6 +625,35 @@ function placeBet() {
         return;
     }
     
+    const potential = amount * selectedBetData.odd;
+    
+    // Send to server
+    try {
+        if (window.secureAPI) {
+            const response = await window.secureAPI.request('/api/betting/place', {
+                method: 'POST',
+                body: JSON.stringify({
+                    eventId: selectedBetData.eventId,
+                    pick: selectedBetData.pick,
+                    odd: selectedBetData.odd,
+                    amount: amount,
+                    currency: state.currentCurrency,
+                    matchInfo: {
+                        team1: selectedBetData.team1,
+                        team2: selectedBetData.team2
+                    }
+                })
+            });
+            
+            if (!response.success) {
+                showNotification('Ошибка сервера', 'error');
+                return;
+            }
+        }
+    } catch (error) {
+        console.error('Place bet error:', error);
+    }
+    
     // Deduct balance
     if (state.currentCurrency === 'ton') {
         state.balance -= amount;
@@ -485,8 +663,7 @@ function placeBet() {
     updateBalanceDisplay();
     
     // Show success
-    const potential = (amount * selectedBetData.odd).toFixed(2);
-    showNotification(`✅ Ставка принята! Возможный выигрыш: ${potential}`, 'success');
+    showNotification(`✅ Ставка принята! Возможный выигрыш: ${potential.toFixed(2)}`, 'success');
     
     // Reset
     hideBetSlip();

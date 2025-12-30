@@ -143,6 +143,28 @@ export class DatabaseService {
         await this.run('CREATE INDEX IF NOT EXISTS idx_inventory_telegram ON inventory(telegram_id)');
         await this.run('CREATE INDEX IF NOT EXISTS idx_case_spins_telegram ON case_spins(telegram_id)');
 
+        // Create bets table
+        await this.run(`
+            CREATE TABLE IF NOT EXISTS bets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id TEXT NOT NULL,
+                event_id TEXT NOT NULL,
+                pick TEXT NOT NULL,
+                odd REAL NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'ton',
+                potential_win REAL NOT NULL,
+                match_info TEXT,
+                status TEXT DEFAULT 'pending',
+                result TEXT,
+                created_at TEXT NOT NULL,
+                settled_at TEXT,
+                FOREIGN KEY (telegram_id) REFERENCES users(telegram_id)
+            )
+        `);
+        await this.run('CREATE INDEX IF NOT EXISTS idx_bets_telegram ON bets(telegram_id)');
+        await this.run('CREATE INDEX IF NOT EXISTS idx_bets_status ON bets(status)');
+
         console.log('✅ Database initialized');
     }
 
@@ -532,5 +554,87 @@ export class DatabaseService {
             ton: user.balance_ton,
             inventory_count: await this.getInventoryCount(telegram_id)
         };
+    }
+
+    // ==================== СТАВКИ (BETTING) ====================
+
+    /**
+     * Сделать ставку
+     */
+    async placeBet(telegram_id, betData) {
+        const now = new Date().toISOString();
+        
+        const result = await this.run(`
+            INSERT INTO bets (
+                telegram_id, event_id, pick, odd, amount, currency, 
+                potential_win, match_info, status, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            telegram_id,
+            betData.eventId,
+            betData.pick,
+            betData.odd,
+            betData.amount,
+            betData.currency,
+            betData.potentialWin,
+            JSON.stringify(betData.matchInfo || {}),
+            betData.status || 'pending',
+            now
+        ]);
+
+        return {
+            id: result.lastID,
+            ...betData,
+            created_at: now
+        };
+    }
+
+    /**
+     * Получить ставки пользователя
+     */
+    async getUserBets(telegram_id, limit = 50) {
+        const bets = await this.all(`
+            SELECT * FROM bets 
+            WHERE telegram_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT ?
+        `, [telegram_id, limit]);
+
+        // Parse match_info JSON
+        return bets.map(bet => ({
+            ...bet,
+            match_info: bet.match_info ? JSON.parse(bet.match_info) : {}
+        }));
+    }
+
+    /**
+     * Обновить статус ставки
+     */
+    async updateBetStatus(betId, status, result = null) {
+        const now = new Date().toISOString();
+        
+        await this.run(`
+            UPDATE bets 
+            SET status = ?, result = ?, settled_at = ?
+            WHERE id = ?
+        `, [status, result, now, betId]);
+    }
+
+    /**
+     * Получить статистику ставок
+     */
+    async getBetStats(telegram_id) {
+        return await this.get(`
+            SELECT 
+                COUNT(*) as total_bets,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_bets,
+                SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END) as won_bets,
+                SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) as lost_bets,
+                SUM(amount) as total_wagered,
+                SUM(CASE WHEN status = 'won' THEN potential_win ELSE 0 END) as total_won
+            FROM bets 
+            WHERE telegram_id = ?
+        `, [telegram_id]);
     }
 }

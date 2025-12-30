@@ -2340,6 +2340,74 @@ body {
     transform: scale(0.98);
 }
 
+/* My Bets Section */
+.bets-loading, .bets-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+}
+
+.my-bet-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 12px;
+}
+
+.my-bet-card.bet-won {
+    border-color: rgba(0, 255, 136, 0.4);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.my-bet-card.bet-lost {
+    border-color: rgba(255, 100, 100, 0.4);
+    background: rgba(255, 100, 100, 0.1);
+}
+
+.my-bet-card.bet-pending {
+    border-color: rgba(255, 200, 0, 0.4);
+    background: rgba(255, 200, 0, 0.05);
+}
+
+.my-bet-card .bet-match {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.my-bet-card .bet-pick {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 6px;
+}
+
+.my-bet-card .bet-amount {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
+}
+
+.my-bet-card .bet-potential {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00ff88;
+    margin-bottom: 8px;
+}
+
+.my-bet-card .bet-status {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.my-bet-card .bet-date {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
 /* Onboarding Overlay */
 .onboarding-overlay {
     position: fixed;
